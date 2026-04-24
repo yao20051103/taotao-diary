@@ -10,77 +10,27 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '18'
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Debug - Check files
-        run: |
-          echo "=== Current directory ==="
-          pwd
-          ls -la
-          echo ""
-          echo "=== Find HTML files ==="
-          find . -name "*.html" -type f
-
-      - name: Setup project
-        run: |
-          mkdir -p taotao-diary-app
-          cd taotao-diary-app
-          npm init -y
-          npm install @capacitor/core @capacitor/cli @capacitor/android
-
-      - name: Copy source files
-        run: |
-          cd taotao-diary-app
-          cp ../diary_system.html ./
-          cp ../manifest.json ./
-          cp ../service-worker.js ./
-          cp ../icom.page.jpg ./
-          ls -la
-
-      - name: Create index.html
-        run: |
-          cd taotao-diary-app
-          echo '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=diary_system.html"></head></html>' > index.html
-
-      - name: Initialize Capacitor
-        run: |
-          cd taotao-diary-app
-          npx cap init "桃桃日记" "com.taotao.diary" --web-dir="."
-
-      - name: Add Android platform
-        run: |
-          cd taotao-diary-app
-          npx cap add android
-
-      - name: Sync Capacitor
-        run: |
-          cd taotao-diary-app
-          npx cap sync android
+      - uses: android-actions/setup-android@v3
 
       - name: Build APK
         run: |
-          cd taotao-diary-app/android
-          chmod +x ./gradlew
-          ./gradlew assembleDebug --stacktrace
+          echo '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=diary_system.html"></head></html>' > index.html
+          npm init -y
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npx cap init "桃桃日记" "com.taotao.diary" --web-dir="."
+          npx cap add android
+          npx cap sync android
+          cd android && chmod +x ./gradlew && ./gradlew assembleDebug
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: taotao-diary-apk
-          path: taotao-diary-app/android/app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 30
+          path: android/app/build/outputs/apk/debug/app-debug.apk
