@@ -22,28 +22,50 @@ jobs:
 
       - name: Setup project
         run: |
-          # 创建 src 目录并复制文件
           mkdir -p src
           cp diary_system.html src/
           cp manifest.json src/
           cp service-worker.js src/
           cp icom.page.jpg src/
-          
-          # 创建 index.html 入口文件（关键！）
           echo '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=diary_system.html"></head></html>' > src/index.html
-          
-          # 初始化项目
           npm init -y
           npm install @capacitor/core @capacitor/cli @capacitor/android
+
+      - name: Clean Gradle Cache
+        run: |
+          rm -rf ~/.gradle/caches/
+          mkdir -p ~/.gradle/caches/
 
       - name: Build APK
         run: |
           npx cap init "桃桃日记" "com.taotao.diary" --web-dir="src"
           npx cap add android
           npx cap sync android
-          cd android && chmod +x ./gradlew && ./gradlew assembleDebug
+          cd android
+          chmod +x ./gradlew
+          # 使用 --no-daemon 避免守护进程问题
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
         with:
           name: taotao-diary-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        if: github.ref == 'refs/heads/main'
+        with:
+          files: android/app/build/outputs/apk/debug/app-debug.apk
+          body: |
+            # 桃桃日记 APK
+            
+            📱 **版本**: 1.0.0
+            
+            ## 下载说明
+            1. 点击上方 `taotao-diary.apk` 下载
+            2. 传输到手机
+            3. 安装（开启"未知来源"权限）
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
