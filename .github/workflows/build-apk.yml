@@ -24,21 +24,8 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Verify Java version
-        run: |
-          java -version
-          echo "JAVA_HOME=$JAVA_HOME"
-
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-
-      - name: Check source files
-        run: |
-          echo "=== 检查文件结构 ==="
-          ls -la
-          echo ""
-          echo "=== 检查新建文件夹 ==="
-          ls -la "新建文件夹" || echo "文件夹不存在"
 
       - name: Create project directory
         run: |
@@ -62,8 +49,6 @@ jobs:
           find . -name "service-worker.js" -exec cp {} taotao-diary-app/src/ \;
           find . -name "icom.page.jpg" -exec cp {} taotao-diary-app/src/ \;
           echo '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=diary_system.html"></head></html>' > taotao-diary-app/src/index.html
-          echo "=== 复制后的文件 ==="
-          ls -la taotao-diary-app/src/
 
       - name: Initialize Capacitor
         run: |
@@ -75,6 +60,12 @@ jobs:
           cd taotao-diary-app
           npx cap add android
 
+      - name: Configure Gradle for Java 21
+        run: |
+          cd taotao-diary-app/android
+          mkdir -p gradle
+          echo 'org.gradle.java.home=/usr/lib/jvm/temurin-21-amd64' >> gradle.properties
+
       - name: Sync Capacitor
         run: |
           cd taotao-diary-app
@@ -84,7 +75,7 @@ jobs:
         run: |
           cd taotao-diary-app/android
           chmod +x ./gradlew
-          ./gradlew assembleDebug --stacktrace
+          ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
