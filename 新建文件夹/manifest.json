@@ -2,6 +2,7 @@
   "name": "桃桃日记",
   "short_name": "桃桃日记",
   "description": "记录每一天的小美好 - 私人日记本",
+  "version": "1.0.0",
   "start_url": "./diary_system.html",
   "scope": "./",
   "display": "standalone",
