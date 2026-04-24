@@ -29,6 +29,9 @@ jobs:
           cp service-worker.js src/
           cp icom.page.jpg src/
           
+          # 创建 index.html 入口文件（关键！）
+          echo '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=diary_system.html"></head></html>' > src/index.html
+          
           # 初始化项目
           npm init -y
           npm install @capacitor/core @capacitor/cli @capacitor/android
