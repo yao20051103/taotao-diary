@@ -1,0 +1,4096 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#FF6B8A">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="桃桃日记">
+    <meta name="description" content="记录每一天的小美好">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="apple-touch-icon" href="./icom.page.jpg">
+    <link rel="icon" type="image/jpeg" href="./icom.page.jpg">
+    <title>桃桃日记</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+      
+        // ========== 应用自动更新检测 ==========
+        const APP_VERSION = '1.0.0';
+        const VERSION_URL = 'https://yao20051103.github.io/taotao-diary/manifest.json';
+        
+        async function checkForUpdates() {
+            try {
+                const res = await fetch(VERSION_URL + '?t=' + Date.now());
+                const data = await res.json();
+                const latestVersion = data.version || data.name;
+                
+                if (APP_VERSION !== latestVersion && !localStorage.getItem('updateDismissed_' + latestVersion)) {
+                    showUpdateNotification(latestVersion);
+                }
+            } catch (e) {
+                console.log('检查更新失败');
+            }
+        }
+        
+        function showUpdateNotification(newVersion) {
+            const notification = document.createElement('div');
+            notification.id = 'updateNotification';
+            notification.style.cssText = 'position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#4CAF50,#81C784);color:white;padding:15px 20px;display:flex;justify-content:space-between;align-items:center;z-index:10000;box-shadow:0 4px 15px rgba(0,0,0,0.2);font-size:0.9em;';
+            notification.innerHTML = '<span>🎉 发现新版本 v' + newVersion + '，刷新即可更新！</span><div><button onclick="refreshForUpdate()" style="background:white;color:#4CAF50;border:none;padding:8px 16px;border-radius:20px;font-weight:bold;cursor:pointer;margin-right:10px;">刷新更新</button><span onclick="dismissUpdate(\'' + newVersion + '\')" style="cursor:pointer;opacity:0.8;">✕</span></div>';
+            document.body.appendChild(notification);
+        }
+        
+        function refreshForUpdate() {
+            location.reload();
+        }
+        
+        function dismissUpdate(version) {
+            localStorage.setItem('updateDismissed_' + version, 'true');
+            const el = document.getElementById('updateNotification');
+            if (el) el.remove();
+        }
+        
+        setTimeout(checkForUpdates, 3000);
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFai SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(180deg, #FFF5F5 0%, #FFE8E8 100%);
+            min-height: 100vh;
+            padding-bottom: 30px;
+        }
+        
+        /* ========== 登录界面 ========== */
+        .login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #FFB6C1 0%, #FFC0CB 50%, #FFE4E1 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.5s, visibility 0.5s;
+        }
+        .login-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .login-box {
+            background: white;
+            padding: 40px 30px;
+            border-radius: 25px;
+            box-shadow: 0 10px 40px rgba(255, 182, 193, 0.4);
+            width: 90%;
+            max-width: 350px;
+            text-align: center;
+        }
+        .login-box .logo {
+            font-size: 4em;
+            margin-bottom: 10px;
+        }
+        .login-box h1 {
+            color: #FF6B8A;
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+        .login-box .subtitle {
+            color: #999;
+            font-size: 0.85em;
+            margin-bottom: 30px;
+        }
+        .login-form {
+            text-align: left;
+        }
+        .login-form .form-group {
+            margin-bottom: 20px;
+        }
+        .login-form label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+            color: #666;
+            font-weight: 500;
+        }
+        .login-form input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #FFE4E1;
+            border-radius: 15px;
+            font-size: 16px;
+            background: #FFF8F8;
+            transition: all 0.3s;
+        }
+        .login-form input:focus {
+            outline: none;
+            border-color: #FFB6C1;
+            background: white;
+        }
+        .login-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #FF6B8A 0%, #FFB6C1 100%);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 17px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 20px rgba(255, 107, 138, 0.3);
+        }
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 107, 138, 0.4);
+        }
+        .login-toggle {
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #999;
+        }
+        .login-toggle a {
+            color: #FF6B8A;
+            text-decoration: none;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .login-toggle a:hover {
+            text-decoration: underline;
+        }
+        .form-title {
+            font-size: 1.3em;
+            color: #FF6B8A;
+            margin-bottom: 5px;
+        }
+        .form-switch {
+            display: flex;
+            background: #FFF5F5;
+            border-radius: 25px;
+            padding: 4px;
+            margin-bottom: 25px;
+        }
+        .form-switch-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            color: #999;
+            font-size: 0.95em;
+            font-weight: 500;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .form-switch-btn.active {
+            background: linear-gradient(135deg, #FF6B8A 0%, #FFB6C1 100%);
+            color: white;
+        }
+        .login-form, .register-form {
+            display: none;
+        }
+        .login-form.active, .register-form.active {
+            display: block;
+        }
+        .password-wrapper {
+            position: relative;
+        }
+        .password-toggle {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #999;
+        }
+        
+        /* ========== 主界面 ========== */
+        .header {
+            background: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header h1 {
+            font-size: 1.1em;
+            color: #333;
+            font-weight: 600;
+        }
+        .header-icons {
+            display: flex;
+            gap: 15px;
+        }
+        .header-icons span {
+            font-size: 1.3em;
+            cursor: pointer;
+        }
+        
+        /* ========== 日期区域 ========== */
+        .date-section {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .date-display {
+            color: #FF6B8A;
+            font-size: 1.8em;
+            font-weight: bold;
+        }
+        .date-display .year {
+            font-size: 0.5em;
+            color: #999;
+            font-weight: normal;
+        }
+        .history-btn {
+            background: linear-gradient(135deg, #FFD4A3 0%, #FFB6C1 100%);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 3px 10px rgba(255, 182, 193, 0.3);
+        }
+        
+        /* ========== 问候卡片 ========== */
+        .greeting-card {
+            background: linear-gradient(135deg, #FFF0F5 0%, #FFE4E1 100%);
+            margin: 0 20px 15px;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 3px 15px rgba(255, 182, 193, 0.3);
+            text-align: center;
+        }
+        .greeting-icon {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .greeting-text {
+            color: #FF6B8A;
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .greeting-quote {
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            color: #666;
+            font-size: 0.95em;
+            line-height: 1.6;
+            margin-top: 10px;
+        }
+        .greeting-quote::before {
+            content: '"';
+            font-size: 1.5em;
+            color: #FFB6C1;
+        }
+        .greeting-quote::after {
+            content: '"';
+            font-size: 1.5em;
+            color: #FFB6C1;
+        }
+        .user-info-bar {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 10px;
+            font-size: 0.85em;
+            color: #999;
+        }
+        .user-info-bar span {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+        
+        /* ========== 卡片样式 ========== */
+        .card {
+            background: white;
+            margin: 15px 20px;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.05);
+        }
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #666;
+            font-size: 0.95em;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+        
+        /* ========== 幸运色 ========== */
+        .lucky-color-btn {
+            background: linear-gradient(135deg, #FFB6C1 0%, #FFA07A 100%);
+            color: white;
+            padding: 15px 40px;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 5px 15px rgba(255, 182, 193, 0.4);
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .lucky-color-btn:hover {
+            transform: scale(1.05);
+        }
+        .lucky-color-result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 15px;
+            display: none;
+        }
+        .lucky-color-result.show {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* ========== 今日足迹 ========== */
+        .footprint-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            font-size: 0.95em;
+        }
+        .footprint-item:last-child {
+            margin-bottom: 0;
+        }
+        .footprint-label {
+            color: #666;
+            min-width: 70px;
+        }
+        .footprint-input {
+            border: none;
+            border-bottom: 2px solid #FFE4E1;
+            background: transparent;
+            color: #FF6B8A;
+            font-size: 1em;
+            padding: 5px;
+            width: 150px;
+            outline: none;
+        }
+        .footprint-input:focus {
+            border-color: #FFB6C1;
+        }
+        
+        /* ========== 日记区域 ========== */
+        .diary-section {
+            background: white;
+            margin: 15px 20px;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.05);
+        }
+        .diary-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .diary-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+        .inspiration-btn {
+            background: linear-gradient(135deg, #FFE4E1 0%, #FFF0F5 100%);
+            color: #FF6B8A;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            border: none;
+            cursor: pointer;
+        }
+        
+        /* ========== 情绪选择 ========== */
+        .mood-selector {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+        .mood-item {
+            text-align: center;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 15px;
+            transition: all 0.3s;
+        }
+        .mood-item:hover {
+            background: #FFF5F5;
+        }
+        .mood-item.selected {
+            background: #FFE4E1;
+            transform: scale(1.1);
+        }
+        .mood-item .emoji {
+            font-size: 2.2em;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .mood-item .name {
+            font-size: 0.75em;
+            color: #666;
+        }
+        
+        /* ========== 天气选择 ========== */
+        .weather-selector {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .weather-item {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            cursor: pointer;
+            background: #F5F5F5;
+            transition: all 0.3s;
+        }
+        .weather-item:hover {
+            background: #FFF0F5;
+        }
+        .weather-item.selected {
+            background: linear-gradient(135deg, #FFB6C1 0%, #FFA07A 100%);
+            box-shadow: 0 3px 10px rgba(255, 182, 193, 0.4);
+        }
+        
+        /* ========== 情绪评分 ========== */
+        .mood-intensity-selector {
+            margin-bottom: 20px;
+            animation: fadeIn 0.3s;
+        }
+        .intensity-options {
+            display: flex;
+            justify-content: space-around;
+        }
+        .intensity-item {
+            text-align: center;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+        .intensity-item:hover {
+            background: #FFF5F5;
+        }
+        .intensity-item.selected {
+            background: #FFE4E1;
+            transform: scale(1.1);
+        }
+        .intensity-item .intensity-num {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #FF6B8A;
+            display: block;
+        }
+        .intensity-item .intensity-label {
+            font-size: 0.75em;
+            color: #666;
+        }
+        
+        /* ========== 情绪标签 ========== */
+        .mood-tags-section {
+            margin-bottom: 15px;
+        }
+        
+        /* ========== 安慰语录显示 ========== */
+        .comfort-quote-section {
+            background: linear-gradient(135deg, #FFF5F5 0%, #FFF0F5 100%);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            border: 1px solid rgba(255, 107, 138, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .comfort-quote-section:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 107, 138, 0.15);
+        }
+        
+        .comfort-quote-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .quote-badge {
+            background: linear-gradient(135deg, #FF6B8A, #FF8FA3);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: bold;
+        }
+        
+        .refresh-quote-btn {
+            background: transparent;
+            border: none;
+            font-size: 1.2em;
+            cursor: pointer;
+            padding: 5px;
+            transition: transform 0.3s ease;
+        }
+        
+        .refresh-quote-btn:hover {
+            transform: rotate(180deg);
+        }
+        
+        .comfort-quote-content {
+            font-size: 1.05em;
+            color: #FF6B8A;
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+        
+        .comfort-quote-content .first-quote {
+            margin-bottom: 12px;
+            font-size: 1.05em;
+            color: #FF6B8A;
+            line-height: 1.6;
+        }
+        
+        .comfort-quote-content .second-quote {
+            margin-bottom: 8px;
+            font-size: 0.95em;
+            color: #FF8FA3;
+            line-height: 1.5;
+            padding-top: 12px;
+            border-top: 1px dashed rgba(255, 107, 138, 0.3);
+        }
+        
+        .comfort-quote-source {
+            font-size: 0.85em;
+            color: #999;
+        }
+        .mood-tags-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .mood-tag-item {
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            cursor: pointer;
+            background: #F5F5F5;
+            color: #666;
+            transition: all 0.3s;
+        }
+        .mood-tag-item:hover {
+            background: #FFF0F5;
+        }
+        .mood-tag-item.selected {
+            background: linear-gradient(135deg, #FF6B8A 0%, #FFB6C1 100%);
+            color: white;
+        }
+        
+        /* ========== 图片上传 ========== */
+        .image-upload-section {
+            margin-bottom: 15px;
+        }
+        .image-upload-area {
+            border: 2px dashed #FFE4E1;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            background: #FFF8F8;
+            transition: all 0.3s;
+        }
+        .image-upload-area:hover {
+            border-color: #FFB6C1;
+            background: #FFF0F0;
+        }
+        .image-preview-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .image-preview-item {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .image-preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .image-preview-item .remove-btn {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 20px;
+            height: 20px;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            border-radius: 50%;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        
+        /* ========== 统计图表 ========== */
+        .mood-chart {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            position: relative;
+        }
+        .pie-chart-container {
+            position: relative;
+            width: 180px;
+            height: 180px;
+        }
+        .pie-chart {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: conic-gradient(
+                #FF6B8A 0deg,
+                #87CEEB 72deg,
+                #98FB98 144deg,
+                #FFD700 216deg,
+                #E6E6FA 288deg
+            );
+        }
+        .pie-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+        }
+        .mood-legend {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.85em;
+            color: #666;
+        }
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+        .mood-trend-chart {
+            height: 150px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            padding: 10px 0;
+        }
+        .trend-bar {
+            width: 30px;
+            background: linear-gradient(180deg, #FF6B8A 0%, #FFB6C1 100%);
+            border-radius: 5px 5px 0 0;
+            transition: all 0.3s;
+            position: relative;
+        }
+        .trend-bar:hover {
+            transform: scaleY(1.05);
+        }
+        .trend-label {
+            text-align: center;
+            font-size: 0.7em;
+            color: #999;
+            margin-top: 5px;
+        }
+        .intensity-chart {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            height: 120px;
+            padding: 10px;
+        }
+        .intensity-bar {
+            width: 50px;
+            background: linear-gradient(180deg, #87CEEB 0%, #FFD700 100%);
+            border-radius: 10px 10px 0 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            padding-bottom: 5px;
+        }
+        .intensity-num {
+            color: white;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        .intensity-label {
+            font-size: 0.7em;
+            color: #666;
+            margin-top: 5px;
+        }
+        .tag-chart {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .tag-item {
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        /* ========== 日期选择器 ========== */
+        .date-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #FFF8F8;
+            border-radius: 10px;
+        }
+        .date-option {
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            cursor: pointer;
+            background: white;
+            color: #666;
+            border: 1px solid #FFE4E1;
+            transition: all 0.3s;
+        }
+        .date-option:hover {
+            background: #FFE4E1;
+        }
+        .date-option.selected {
+            background: linear-gradient(135deg, #FF6B8A 0%, #FFB6C1 100%);
+            color: white;
+            border-color: #FF6B8A;
+        }
+        
+        /* ========== 输入区域 ========== */
+        .input-prompt {
+            color: #999;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .diary-input {
+            width: 100%;
+            min-height: 120px;
+            border: none;
+            background: #FFF8F8;
+            border-radius: 15px;
+            padding: 15px;
+            font-size: 1em;
+            resize: vertical;
+            outline: none;
+            font-family: inherit;
+        }
+        .diary-input:focus {
+            background: #FFF0F0;
+        }
+        
+        /* ========== 保存按钮 ========== */
+        .save-btn {
+            width: calc(100% - 40px);
+            margin: 20px;
+            padding: 18px;
+            background: linear-gradient(135deg, #FF6B8A 0%, #FFB6C1 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(255, 107, 138, 0.3);
+            transition: all 0.3s;
+        }
+        .save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 107, 138, 0.4);
+        }
+        
+        /* ========== 日历样式 ========== */
+        .calendar-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .calendar-weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            margin-bottom: 8px;
+            font-size: 0.8em;
+            color: #999;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 3px;
+        }
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            font-size: 0.6em;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            background: transparent;
+        }
+        .calendar-day.has-diary {
+            background: white;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+        }
+        .calendar-day:hover {
+            transform: scale(1.05);
+        }
+        .calendar-day.other-month {
+            color: #DDD;
+        }
+        .calendar-day.today {
+            background: #FFE4E1;
+            font-weight: bold;
+        }
+        .calendar-day .day-number {
+            font-size: 1.8em;
+            color: #333;
+        }
+        .calendar-day .day-mood {
+            font-size: 0.9em;
+            margin-top: 1px;
+        }
+        .calendar-day.has-diary .day-number {
+            font-size: 1.4em;
+        }
+        
+        /* ========== 历史日记页面 ========== */
+        .history-page {
+            display: none;
+            padding: 20px;
+        }
+        .history-page.show {
+            display: block;
+        }
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #FF6B8A;
+            margin-bottom: 20px;
+            cursor: pointer;
+            font-size: 0.95em;
+        }
+        .diary-list-item {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .diary-list-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(255,107,138,0.2);
+        }
+        .filter-tag {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .filter-tag:hover {
+            transform: scale(1.05);
+        }
+        .filter-tag.selected {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .year-group {
+            background: linear-gradient(135deg, #FF6B8A, #FFB6C1);
+            color: white;
+            padding: 12px 18px;
+            border-radius: 15px;
+            font-size: 1.3em;
+            font-weight: bold;
+            margin: 20px 0 15px 0;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+            user-select: none;
+        }
+        .year-group:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 15px rgba(255,107,138,0.3);
+        }
+        .year-group .toggle-icon {
+            font-size: 1em;
+            transition: transform 0.3s;
+        }
+        .year-group.collapsed .toggle-icon {
+            transform: rotate(-90deg);
+        }
+        .month-group {
+            background: rgba(255,255,255,0.9);
+            padding: 10px 15px;
+            margin: 10px 0 10px 10px;
+            border-radius: 10px;
+            font-size: 0.95em;
+            color: #FF6B8A;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .month-group:hover {
+            background: #FFF0F5;
+        }
+        .month-group .toggle-icon {
+            font-size: 0.9em;
+            transition: transform 0.3s;
+            margin-left: auto;
+        }
+        .month-group.collapsed .toggle-icon {
+            transform: rotate(-90deg);
+        }
+        .diary-in-month {
+            transition: all 0.3s;
+            overflow: hidden;
+        }
+        .diary-in-month.collapsed {
+            max-height: 0;
+            opacity: 0;
+            margin: 0;
+            padding: 0;
+        }
+        .favorite-icon {
+            color: #FF6B8A;
+        }
+        .favorite-icon.active {
+            color: #FF4081;
+            animation: heartbeat 0.6s ease-in-out;
+        }
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+        }
+        .diary-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .diary-list-date {
+            color: #999;
+            font-size: 0.85em;
+        }
+        .diary-list-mood {
+            font-size: 1.5em;
+        }
+        .diary-list-content {
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        /* ========== 隐藏类 ========== */
+        .hidden {
+            display: none !important;
+        }
+        .main-content {
+            display: block;
+        }
+        .main-content.hidden {
+            display: none;
+        }
+        
+        /* ========== 主题切换样式 ========== */
+        .theme-option {
+            border: 2px solid transparent;
+        }
+        .theme-option:hover {
+            transform: scale(1.05);
+        }
+        .theme-option.selected {
+            border-color: #FF6B8A;
+            box-shadow: 0 3px 10px rgba(255, 107, 138, 0.3);
+        }
+        
+        /* 蓝色主题 */
+        body.theme-blue {
+            background: linear-gradient(180deg, #E3F2FD 0%, #BBDEFB 100%);
+        }
+        body.theme-blue .login-overlay {
+            background: linear-gradient(180deg, #90CAF9 0%, #64B5F6 50%, #BBDEFB 100%);
+        }
+        body.theme-blue .login-box h1,
+        body.theme-blue .date-display,
+        body.theme-blue .greeting-text,
+        body.theme-blue .save-btn,
+        body.theme-blue .lucky-color-btn {
+            color: #1976D2;
+        }
+        body.theme-blue .login-btn,
+        body.theme-blue .save-btn,
+        body.theme-blue .lucky-color-btn,
+        body.theme-blue .history-btn,
+        body.theme-blue .mood-tag-item.selected {
+            background: linear-gradient(135deg, #1976D2 0%, #64B5F6 100%);
+        }
+        
+        /* 绿色主题 */
+        body.theme-green {
+            background: linear-gradient(180deg, #E8F5E9 0%, #C8E6C9 100%);
+        }
+        body.theme-green .login-overlay {
+            background: linear-gradient(180deg, #81C784 0%, #66BB6A 50%, #A5D6A7 100%);
+        }
+        body.theme-green .login-box h1,
+        body.theme-green .date-display,
+        body.theme-green .greeting-text,
+        body.theme-green .save-btn,
+        body.theme-green .lucky-color-btn {
+            color: #388E3C;
+        }
+        body.theme-green .login-btn,
+        body.theme-green .save-btn,
+        body.theme-green .lucky-color-btn,
+        body.theme-green .history-btn,
+        body.theme-green .mood-tag-item.selected {
+            background: linear-gradient(135deg, #388E3C 0%, #81C784 100%);
+        }
+        
+        /* 紫色主题 */
+        body.theme-purple {
+            background: linear-gradient(180deg, #F3E5F5 0%, #E1BEE7 100%);
+        }
+        body.theme-purple .login-overlay {
+            background: linear-gradient(180deg, #CE93D8 0%, #BA68C8 50%, #E1BEE7 100%);
+        }
+        body.theme-purple .login-box h1,
+        body.theme-purple .date-display,
+        body.theme-purple .greeting-text,
+        body.theme-purple .save-btn,
+        body.theme-purple .lucky-color-btn {
+            color: #7B1FA2;
+        }
+        body.theme-purple .login-btn,
+        body.theme-purple .save-btn,
+        body.theme-purple .lucky-color-btn,
+        body.theme-purple .history-btn,
+        body.theme-purple .mood-tag-item.selected {
+            background: linear-gradient(135deg, #7B1FA2 0%, #CE93D8 100%);
+        }
+        
+        /* 橙色主题 */
+        body.theme-orange {
+            background: linear-gradient(180deg, #FFF3E0 0%, #FFE0B2 100%);
+        }
+        body.theme-orange .login-overlay {
+            background: linear-gradient(180deg, #FFB74D 0%, #FFA726 50%, #FFCC80 100%);
+        }
+        body.theme-orange .login-box h1,
+        body.theme-orange .date-display,
+        body.theme-orange .greeting-text,
+        body.theme-orange .save-btn,
+        body.theme-orange .lucky-color-btn {
+            color: #F57C00;
+        }
+        body.theme-orange .login-btn,
+        body.theme-orange .save-btn,
+        body.theme-orange .lucky-color-btn,
+        body.theme-orange .history-btn,
+        body.theme-orange .mood-tag-item.selected {
+            background: linear-gradient(135deg, #F57C00 0%, #FFB74D 100%);
+        }
+        
+        /* 暗色主题 */
+        body.theme-dark {
+            background: linear-gradient(180deg, #2C2C2C 0%, #1A1A1A 100%);
+        }
+        body.theme-dark .login-overlay {
+            background: linear-gradient(180deg, #424242 0%, #303030 50%, #212121 100%);
+        }
+        body.theme-dark .header,
+        body.theme-dark .card,
+        body.theme-dark .diary-section,
+        body.theme-dark .login-box,
+        body.theme-dark .greeting-card,
+        body.theme-dark .mood-item,
+        body.theme-dark .intensity-item,
+        body.theme-dark .mood-tag-item,
+        body.theme-dark .date-selector,
+        body.theme-dark .diary-list-item,
+        body.theme-dark .weather-item {
+            background: #333;
+            color: #EEE;
+        }
+        body.theme-dark .login-box h1,
+        body.theme-dark .header h1,
+        body.theme-dark .diary-title,
+        body.theme-dark .card-title,
+        body.theme-dark .date-display,
+        body.theme-dark .greeting-text,
+        body.theme-dark .diary-list-content,
+        body.theme-dark .greeting-quote {
+            color: #FFB6C1;
+        }
+        body.theme-dark .subtitle,
+        body.theme-dark .year,
+        body.theme-dark .mood-item .name,
+        body.theme-dark .intensity-label,
+        body.theme-dark .calendar-weekdays,
+        body.theme-dark .diary-list-date,
+        body.theme-dark .user-info-bar {
+            color: #AAA;
+        }
+        body.theme-dark .login-form label,
+        body.theme-dark .footprint-label,
+        body.theme-dark .legend-item,
+        body.theme-dark .input-prompt {
+            color: #CCC;
+        }
+        body.theme-dark .diary-input,
+        body.theme-dark .input-prompt {
+            background: #2A2A2A;
+            color: #EEE;
+        }
+        body.theme-dark .login-form input {
+            background: #2A2A2A;
+            border-color: #444;
+            color: #EEE;
+        }
+        body.theme-dark .login-form input:focus {
+            background: #333;
+            border-color: #FFB6C1;
+        }
+        body.theme-dark .login-btn,
+        body.theme-dark .save-btn,
+        body.theme-dark .lucky-color-btn,
+        body.theme-dark .history-btn,
+        body.theme-dark .mood-tag-item.selected,
+        body.theme-dark .inspiration-btn {
+            background: linear-gradient(135deg, #FF6B8A 0%, #FFB6C1 100%);
+        }
+        body.theme-dark .mood-item:hover,
+        body.theme-dark .mood-item.selected,
+        body.theme-dark .intensity-item:hover,
+        body.theme-dark .intensity-item.selected,
+        body.theme-dark .weather-item:hover,
+        body.theme-dark .weather-item.selected,
+        body.theme-dark .calendar-day.today {
+            background: #444;
+        }
+        body.theme-dark .date-option {
+            background: #2A2A2A;
+            border-color: #444;
+            color: #CCC;
+        }
+        body.theme-dark .date-option.selected {
+            background: linear-gradient(135deg, #FF6B8A 0%, #FFB6C1 100%);
+            color: white;
+        }
+        body.theme-dark .image-upload-area {
+            background: #2A2A2A;
+            border-color: #444;
+        }
+        body.theme-dark .storageBar {
+            background: linear-gradient(90deg, #FF6B8A 0%, #FFB6C1 100%);
+        }
+
+        /* ========== 图片库年份月份样式 ========== */
+        .year-title {
+            display: flex;
+            align-items: center;
+            padding: 15px 0 10px 0;
+            margin-top: 10px;
+            border-top: 2px solid rgba(255,255,255,0.2);
+        }
+        .year-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #FF6B8A;
+            text-shadow: 0 2px 10px rgba(255,107,138,0.5);
+        }
+        .month-tag {
+            background: linear-gradient(135deg, #FF6B8A, #FFB6C1);
+            color: white;
+            padding: 4px 14px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- ========== 登录界面 ========== -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-box">
+            <div class="logo">📔</div>
+            <h1>桃桃日记</h1>
+            <p class="subtitle">记录每一天的小美好</p>
+            
+            <!-- 登录/注册切换 -->
+            <div class="form-switch">
+                <button class="form-switch-btn active" id="loginTab" onclick="switchForm('login')">登录</button>
+                <button class="form-switch-btn" id="registerTab" onclick="switchForm('register')">注册</button>
+            </div>
+            
+            <!-- 登录表单 -->
+            <form class="login-form active" id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>👤 账号</label>
+                    <input type="text" id="loginAccount" placeholder="请输入账号" required style="width: 100%; padding: 15px; border: 2px solid #FFE4E1; border-radius: 15px; font-size: 16px; background: #FFF8F8;">
+                </div>
+                
+                <div class="form-group">
+                    <label>🔒 密码</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="loginPassword" placeholder="请输入密码" required style="width: 100%; padding: 15px; border: 2px solid #FFE4E1; border-radius: 15px; font-size: 16px; background: #FFF8F8;">
+                        <span class="password-toggle" onclick="togglePassword('loginPassword')">👁️</span>
+                    </div>
+                </div>
+                
+                <button type="submit" class="login-btn">登录 ✨</button>
+            </form>
+            
+            <!-- 注册表单 -->
+            <form class="register-form" id="registerForm" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label>👤 用户名</label>
+                    <input type="text" id="regName" placeholder="请输入用户名" required style="width: 100%; padding: 15px; border: 2px solid #FFE4E1; border-radius: 15px; font-size: 16px; background: #FFF8F8;">
+                </div>
+                
+                <div class="form-group">
+                    <label>📱 账号</label>
+                    <input type="text" id="regAccount" placeholder="请输入账号（用于登录）" required style="width: 100%; padding: 15px; border: 2px solid #FFE4E1; border-radius: 15px; font-size: 16px; background: #FFF8F8;">
+                </div>
+                
+                <div class="form-group">
+                    <label>🔒 密码</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="regPassword" placeholder="请输入密码" required style="width: 100%; padding: 15px; border: 2px solid #FFE4E1; border-radius: 15px; font-size: 16px; background: #FFF8F8;">
+                        <span class="password-toggle" onclick="togglePassword('regPassword')">👁️</span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>🎂 出生年月日</label>
+                    <input type="date" id="birthDate" required style="width: 100%; padding: 15px; border: 2px solid #FFE4E1; border-radius: 15px; font-size: 16px; background: #FFF8F8;">
+                </div>
+                
+                <button type="submit" class="login-btn">注册 ✨</button>
+            </form>
+            
+            <div class="login-toggle">
+                <span id="toggleText">还没有账号？<a onclick="switchForm('register')">立即注册</a></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== 主界面 ========== -->
+    <div class="main-content" id="mainContent">
+        <div class="header">
+            <h1>桃桃日记</h1>
+            <div class="header-icons">
+                <span onclick="showUser()">👤</span>
+                <span onclick="showStats()">📊</span>
+                <span onclick="showHistory()">📚</span>
+                <span onclick="logout()">🚪</span>
+            </div>
+        </div>
+        
+        <!-- 日期区域 -->
+        <div class="date-section">
+            <div class="date-display" id="dateDisplay">
+                <span id="currentDate">4月18日</span>
+                <div class="year" id="currentYear">2026年</div>
+            </div>
+            <button class="history-btn" onclick="showHistory()">
+                🔔 历史日记
+            </button>
+        </div>
+        
+        <!-- 问候卡片 - 根据昨天心情推送 -->
+        <div class="greeting-card" id="greetingCard">
+            <div class="greeting-icon" id="greetingIcon">👋</div>
+            <div class="greeting-text" id="greetingText">正在加载...</div>
+            <div class="greeting-quote" id="greetingQuote">今天也要元气满满哦！</div>
+            <div id="dailyQuoteText" style="margin-top: 10px; text-align: center;"></div>
+            <div class="user-info-bar" id="userInfoBar"></div>
+        </div>
+        
+        <!-- 幸运色卡片 -->
+        <div class="card">
+            <div class="card-title">
+                <span>✨</span>
+                <span>今日幸运色</span>
+            </div>
+            <div style="text-align: center;">
+                <button class="lucky-color-btn" onclick="generateLuckyColor()">
+                    ✨ 点我召唤幸运色 ✨
+                </button>
+                <div class="lucky-color-result" id="luckyColorResult"></div>
+            </div>
+        </div>
+        
+        <!-- 日历区域 -->
+        <div class="card" id="calendarCard">
+            <div class="card-title">
+                <span>📅</span>
+                <span>日记日历</span>
+                <span id="calendarMonthDisplay" style="margin-left: auto; font-size: 0.85em; color: #FF6B8A;"></span>
+            </div>
+            <div class="calendar-nav" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <button class="inspiration-btn" onclick="changeMonth(-1)">◀</button>
+                <span id="calendarYear" style="font-weight: bold; color: #666;"></span>
+                <button class="inspiration-btn" onclick="changeMonth(1)">▶</button>
+            </div>
+            <div class="calendar-weekdays">
+                <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+            </div>
+            <div class="calendar-grid" id="calendarGrid"></div>
+            <div style="text-align: center; margin-top: 10px;">
+                <button class="inspiration-btn" id="toggleBtn" onclick="toggleCalendar()">▲ 展开</button>
+            </div>
+        </div>
+        
+        <!-- 写日记区域 -->
+        <div class="diary-section">
+            <div class="diary-header">
+                <div class="diary-title">
+                    <span>✍️</span>
+                    <span id="userDiaryTitle">小丸子的日记</span>
+                </div>
+            </div>
+            
+            <!-- 情绪选择 -->
+            <div class="mood-selector">
+                <div class="mood-item" data-mood="party" onclick="selectMood(this)">
+                    <span class="emoji">🥳</span>
+                    <span class="name">超开心</span>
+                </div>
+                <div class="mood-item selected" data-mood="happy" onclick="selectMood(this)">
+                    <span class="emoji">😊</span>
+                    <span class="name">开心</span>
+                </div>
+                <div class="mood-item" data-mood="normal" onclick="selectMood(this)">
+                    <span class="emoji">😐</span>
+                    <span class="name">一般</span>
+                </div>
+                <div class="mood-item" data-mood="sad" onclick="selectMood(this)">
+                    <span class="emoji">😢</span>
+                    <span class="name">难过</span>
+                </div>
+                <div class="mood-item" data-mood="angry" onclick="selectMood(this)">
+                    <span class="emoji">😠</span>
+                    <span class="name">生气</span>
+                </div>
+            </div>
+            
+            <!-- 情绪评分 -->
+            <div class="mood-intensity-selector" id="moodIntensitySelector" style="display: none;">
+                <div class="card-title" style="margin-bottom: 10px;">
+                    <span>💫</span>
+                    <span>情绪强度</span>
+                </div>
+                <div class="intensity-options">
+                    <div class="intensity-item" data-score="1" onclick="selectIntensity(this)">
+                        <span class="intensity-num">1</span>
+                        <span class="intensity-label">一点点</span>
+                    </div>
+                    <div class="intensity-item" data-score="2" onclick="selectIntensity(this)">
+                        <span class="intensity-num">2</span>
+                        <span class="intensity-label">有点儿</span>
+                    </div>
+                    <div class="intensity-item selected" data-score="3" onclick="selectIntensity(this)">
+                        <span class="intensity-num">3</span>
+                        <span class="intensity-label">刚刚好</span>
+                    </div>
+                    <div class="intensity-item" data-score="4" onclick="selectIntensity(this)">
+                        <span class="intensity-num">4</span>
+                        <span class="intensity-label">比较</span>
+                    </div>
+                    <div class="intensity-item" data-score="5" onclick="selectIntensity(this)">
+                        <span class="intensity-num">5</span>
+                        <span class="intensity-label">非常</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 天气选择 -->
+            <div class="weather-selector">
+                <div class="weather-item selected" data-weather="sunny" onclick="selectWeather(this)">☀️</div>
+                <div class="weather-item" data-weather="cloudy" onclick="selectWeather(this)">☁️</div>
+                <div class="weather-item" data-weather="rainy" onclick="selectWeather(this)">🌧️</div>
+                <div class="weather-item" data-weather="snowy" onclick="selectWeather(this)">❄️</div>
+                <div class="weather-item" data-weather="storm" onclick="selectWeather(this)">⛈️</div>
+            </div>
+            
+            <!-- 情绪标签 -->
+            <div class="mood-tags-section">
+                <div class="card-title" style="margin-bottom: 10px;">
+                    <span>🏷️</span>
+                    <span>情绪标签</span>
+                </div>
+                <div class="mood-tags-options">
+                    <div class="mood-tag-item" data-tag="学习" onclick="toggleTag(this)">📚 学习</div>
+                    <div class="mood-tag-item" data-tag="工作" onclick="toggleTag(this)">💼 工作</div>
+                    <div class="mood-tag-item" data-tag="生活" onclick="toggleTag(this)">🏠 生活</div>
+                    <div class="mood-tag-item" data-tag="社交" onclick="toggleTag(this)">👥 社交</div>
+                    <div class="mood-tag-item" data-tag="健康" onclick="toggleTag(this)">💪 健康</div>
+                    <div class="mood-tag-item" data-tag="家庭" onclick="toggleTag(this)">👨‍👩‍👧 家庭</div>
+                    <div class="mood-tag-item" data-tag="感情" onclick="toggleTag(this)">💕 感情</div>
+                    <div class="mood-tag-item" data-tag="兴趣" onclick="toggleTag(this)">🎨 兴趣</div>
+                </div>
+            </div>
+            
+            <!-- 安慰语录显示区域 -->
+            <div class="comfort-quote-section" id="comfortQuoteSection">
+                <div class="comfort-quote-header">
+                    <span class="quote-badge">✨ 每日联网更新</span>
+                    <button class="refresh-quote-btn" onclick="refreshComfortQuote()" title="刷新语录">🔄</button>
+                </div>
+                <div class="comfort-quote-content" id="comfortQuoteText">
+                    💝 每天都是新的开始，让我们一起迎接美好的时光~
+                </div>
+                <div class="comfort-quote-source" id="comfortQuoteSource">—— 每日语录</div>
+            </div>
+            
+            <!-- 日记输入 -->
+            <textarea class="diary-input" id="diaryContent" placeholder="写下今天的心情..."></textarea>
+            
+            <!-- 图片上传 -->
+            <div class="image-upload-section" style="margin-top: 15px;">
+                <div class="card-title" style="margin-bottom: 10px;">
+                    <span>🖼️</span>
+                    <span>添加图片</span>
+                </div>
+                <div class="image-upload-area" id="imageUploadArea" onclick="document.getElementById('imageInput').click()">
+                    <span style="font-size: 2em;">📷</span>
+                    <span style="color: #999; font-size: 0.85em;">点击上传图片</span>
+                </div>
+                <input type="file" id="imageInput" accept="image/*" multiple style="display: none;" onchange="handleImageUpload(event)">
+                <div class="image-preview-list" id="imagePreviewList"></div>
+            </div>
+        </div>
+        
+        <!-- 保存按钮 -->
+        <button class="save-btn" onclick="saveDiary()">💾 保存日记</button>
+    </div>
+    
+    <!-- ========== 历史日记页面 ========== -->
+    <div class="history-page" id="historyPage">
+        <div class="back-btn" onclick="showMain()">
+            <span>←</span>
+            <span>返回</span>
+        </div>
+        <h2 style="color: #FF6B8A; margin-bottom: 15px;">📚 历史日记</h2>
+        
+        <!-- 搜索过滤区域 -->
+        <div style="margin-bottom: 15px; padding: 12px; background: rgba(255,255,255,0.8); border-radius: 15px;">
+            <!-- 情绪标签过滤 -->
+            <div style="margin-bottom: 10px;">
+                <div style="font-size: 0.8em; color: #999; margin-bottom: 5px;">按情绪标签筛选：</div>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                    <span class="filter-tag selected" data-tag="all" onclick="filterByTag('all')" style="background: #FF6B8A; color: white;">全部</span>
+                    <span class="filter-tag" data-tag="学习" onclick="filterByTag('学习')" style="background: #FFE4E1; color: #FF6B8A;">📚 学习</span>
+                    <span class="filter-tag" data-tag="工作" onclick="filterByTag('工作')" style="background: #E3F2FD; color: #2196F3;">💼 工作</span>
+                    <span class="filter-tag" data-tag="生活" onclick="filterByTag('生活')" style="background: #E8F5E9; color: #4CAF50;">🏠 生活</span>
+                    <span class="filter-tag" data-tag="社交" onclick="filterByTag('社交')" style="background: #FFF3E0; color: #FF9800;">👥 社交</span>
+                    <span class="filter-tag" data-tag="健康" onclick="filterByTag('健康')" style="background: #FCE4EC; color: #E91E63;">💪 健康</span>
+                    <span class="filter-tag" data-tag="家庭" onclick="filterByTag('家庭')" style="background: #F3E5F5; color: #9C27B0;">👨‍👩‍👧 家庭</span>
+                    <span class="filter-tag" data-tag="感情" onclick="filterByTag('感情')" style="background: #FFEBEE; color: #F44336;">💕 感情</span>
+                    <span class="filter-tag" data-tag="兴趣" onclick="filterByTag('兴趣')" style="background: #E0F7FA; color: #00BCD4;">🎨 兴趣</span>
+                </div>
+            </div>
+            <!-- 只看重要日记 -->
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" id="showFavoritesOnly" onchange="toggleFavoritesFilter()" style="accent-color: #FF6B8A;">
+                <label for="showFavoritesOnly" style="font-size: 0.85em; color: #666; cursor: pointer;">只看重要日记 ❤️</label>
+            </div>
+        </div>
+        
+        <div id="historyList"></div>
+    </div>
+    
+    <!-- ========== 查看日记详情模态框 ========== -->
+    <div id="diaryDetailModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center;">
+        <div style="background: white; border-radius: 20px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; padding: 20px; position: relative;">
+            <div style="position: sticky; top: 0; background: white; padding-bottom: 10px; border-bottom: 1px solid #FFE4E1; margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span id="diaryDetailDate" style="font-size: 1.1em; font-weight: bold; color: #FF6B8A;"></span>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <span id="diaryDetailFavorite" style="font-size: 1.5em; cursor: pointer;" onclick="toggleDiaryFavorite()"></span>
+                        <span onclick="closeDiaryDetail()" style="font-size: 1.5em; cursor: pointer; color: #999;">✕</span>
+                    </div>
+                </div>
+                <div id="diaryDetailWeekday" style="font-size: 0.85em; color: #999; margin-top: 3px;"></div>
+            </div>
+            <div id="diaryDetailMood" style="margin-bottom: 10px;"></div>
+            <div id="diaryDetailTags" style="margin-bottom: 10px;"></div>
+            <div id="diaryDetailWeather" style="margin-bottom: 15px; color: #666;"></div>
+            <div id="diaryDetailContent" style="line-height: 1.8; color: #333; white-space: pre-wrap;"></div>
+            <div id="diaryDetailImages" style="margin-top: 15px;"></div>
+            <div id="diaryDetailQuote" style="margin-top: 15px; padding: 12px; background: #FFF8F8; border-radius: 10px; font-size: 0.9em; color: #FF6B8A; font-style: italic;"></div>
+        </div>
+    </div>
+    
+    <!-- ========== 统计分析页面 ========== -->
+    <div class="history-page" id="statsPage">
+        <div class="back-btn" onclick="showMain()">
+            <span>←</span>
+            <span>返回</span>
+        </div>
+        <h2 style="color: #FF6B8A; margin-bottom: 20px;">📊 情绪统计分析</h2>
+        
+        <!-- 情绪分布饼图 -->
+        <div class="card" style="margin-bottom: 15px;">
+            <div class="card-title">
+                <span>🥧</span>
+                <span>情绪分布</span>
+            </div>
+            <div class="date-selector" id="pieDateSelector">
+                <span class="date-option" data-range="7" onclick="selectDateRange('pie', 7)">近一个星期</span>
+                <span class="date-option" data-range="15" onclick="selectDateRange('pie', 15)">近半个月</span>
+                <span class="date-option" data-range="30" onclick="selectDateRange('pie', 30)">近1个月</span>
+                <span class="date-option" data-range="180" onclick="selectDateRange('pie', 180)">近半年</span>
+                <span class="date-option" data-range="365" onclick="selectDateRange('pie', 365)">近一年</span>
+                <span class="date-option selected" data-range="0" onclick="selectDateRange('pie', 0)">一直以来</span>
+            </div>
+            <div class="mood-chart" id="moodPieChart"></div>
+            <div class="mood-legend" id="moodLegend"></div>
+        </div>
+        
+        <!-- 情绪评分统计 -->
+        <div class="card" style="margin-bottom: 15px;">
+            <div class="card-title">
+                <span>⭐</span>
+                <span>情绪评分</span>
+            </div>
+            <div class="date-selector" id="scoreDateSelector">
+                <span class="date-option selected" data-range="7" onclick="selectDateRange('score', 7)">近一个星期</span>
+                <span class="date-option" data-range="30" onclick="selectDateRange('score', 30)">近一个月</span>
+                <span class="date-option" data-range="180" onclick="selectDateRange('score', 180)">近半年</span>
+                <span class="date-option" data-range="365" onclick="selectDateRange('score', 365)">近一年</span>
+            </div>
+            <div id="moodScoreChart"></div>
+            <div id="moodScoreTotal"></div>
+        </div>
+        
+        <!-- 情绪强度统计 -->
+        <div class="card" style="margin-bottom: 15px;">
+            <div class="card-title">
+                <span>💫</span>
+                <span>情绪强度分布</span>
+            </div>
+            <div class="date-selector" id="intensityDateSelector">
+                <span class="date-option" data-range="7" onclick="selectDateRange('intensity', 7)">近一个星期</span>
+                <span class="date-option" data-range="15" onclick="selectDateRange('intensity', 15)">近半个月</span>
+                <span class="date-option" data-range="30" onclick="selectDateRange('intensity', 30)">近1个月</span>
+                <span class="date-option" data-range="180" onclick="selectDateRange('intensity', 180)">近半年</span>
+                <span class="date-option" data-range="365" onclick="selectDateRange('intensity', 365)">近一年</span>
+                <span class="date-option selected" data-range="0" onclick="selectDateRange('intensity', 0)">一直以来</span>
+            </div>
+            <div class="intensity-chart" id="intensityChart"></div>
+        </div>
+        
+        <!-- 标签统计 -->
+        <div class="card" style="margin-bottom: 15px;">
+            <div class="card-title">
+                <span>🏷️</span>
+                <span>标签统计</span>
+            </div>
+            <div class="date-selector" id="tagDateSelector">
+                <span class="date-option" data-range="7" onclick="selectDateRange('tag', 7)">近一个星期</span>
+                <span class="date-option" data-range="15" onclick="selectDateRange('tag', 15)">近半个月</span>
+                <span class="date-option" data-range="30" onclick="selectDateRange('tag', 30)">近1个月</span>
+                <span class="date-option" data-range="180" onclick="selectDateRange('tag', 180)">近半年</span>
+                <span class="date-option" data-range="365" onclick="selectDateRange('tag', 365)">近一年</span>
+                <span class="date-option selected" data-range="0" onclick="selectDateRange('tag', 0)">一直以来</span>
+            </div>
+            <div class="tag-chart" id="tagChart"></div>
+        </div>
+        
+        <!-- 总体统计 -->
+        <div class="card" style="margin-bottom: 15px;">
+            <div class="card-title">
+                <span>📋</span>
+                <span>总体统计</span>
+            </div>
+            <div id="overallStats"></div>
+        </div>
+    </div>
+
+    <!-- ========== 用户中心页面 ========== -->
+    <div class="history-page" id="userPage">
+        <div class="back-btn" onclick="showMain()">
+            <span>←</span>
+            <span>返回</span>
+        </div>
+        <h2 style="color: #FF6B8A; margin-bottom: 20px;">👤 用户中心</h2>
+        
+        <!-- 个人信息卡片 -->
+        <div class="card" style="margin-bottom: 15px;">
+            <div class="card-title">
+                <span>👤</span>
+                <span>个人信息</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 15px; padding: 10px 0;">
+                <div style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #FF6B8A, #FFB6C1); display: flex; align-items: center; justify-content: center; font-size: 2em;">📔</div>
+                <div style="flex: 1;">
+                    <div id="userProfileName" style="font-size: 1.2em; font-weight: bold; color: #333;">未登录</div>
+                    <div id="userProfileAccount" style="font-size: 0.85em; color: #FF6B8A; margin: 3px 0;">账号：--</div>
+                    <div id="userProfileAge" style="font-size: 0.85em; color: #999;">点击编辑</div>
+                </div>
+                <button class="inspiration-btn" onclick="editProfile()">✏️ 编辑</button>
+            </div>
+        </div>
+        
+        <!-- 主题风格 -->
+        <div class="card" style="margin-bottom: 15px;">
+            <div class="card-title">
+                <span>🎨</span>
+                <span>主题风格</span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 15px;">
+                <div class="theme-option selected" data-theme="pink" onclick="selectTheme('pink')" style="padding: 15px; border-radius: 15px; text-align: center; cursor: pointer; background: linear-gradient(135deg, #FFB6C1, #FFC0CB); transition: all 0.3s;">
+                    <div style="font-size: 1.5em;">🌸</div>
+                    <div style="font-size: 0.8em; color: #666; margin-top: 5px;">樱花粉</div>
+                </div>
+                <div class="theme-option" data-theme="blue" onclick="selectTheme('blue')" style="padding: 15px; border-radius: 15px; text-align: center; cursor: pointer; background: #E3F2FD; transition: all 0.3s;">
+                    <div style="font-size: 1.5em;">🌊</div>
+                    <div style="font-size: 0.8em; color: #666; margin-top: 5px;">天空蓝</div>
+                </div>
+                <div class="theme-option" data-theme="green" onclick="selectTheme('green')" style="padding: 15px; border-radius: 15px; text-align: center; cursor: pointer; background: #E8F5E9; transition: all 0.3s;">
+                    <div style="font-size: 1.5em;">🌿</div>
+                    <div style="font-size: 0.8em; color: #666; margin-top: 5px;">薄荷绿</div>
+                </div>
+                <div class="theme-option" data-theme="purple" onclick="selectTheme('purple')" style="padding: 15px; border-radius: 15px; text-align: center; cursor: pointer; background: #F3E5F5; transition: all 0.3s;">
+                    <div style="font-size: 1.5em;">🌙</div>
+                    <div style="font-size: 0.8em; color: #666; margin-top: 5px;">薰衣草紫</div>
+                </div>
+                <div class="theme-option" data-theme="orange" onclick="selectTheme('orange')" style="padding: 15px; border-radius: 15px; text-align: center; cursor: pointer; background: #FFF3E0; transition: all 0.3s;">
+                    <div style="font-size: 1.5em;">🍊</div>
+                    <div style="font-size: 0.8em; color: #666; margin-top: 5px;">暖阳橙</div>
+                </div>
+                <div class="theme-option" data-theme="dark" onclick="selectTheme('dark')" style="padding: 15px; border-radius: 15px; text-align: center; cursor: pointer; background: #424242; transition: all 0.3s;">
+                    <div style="font-size: 1.5em;">🌙</div>
+                    <div style="font-size: 0.8em; color: #FFF; margin-top: 5px;">暗夜模式</div>
+                </div>
+            </div>
+            <div style="margin-top: 15px; padding: 12px; background: #FFF8F8; border-radius: 10px; font-size: 0.85em; color: #666;">
+                💡 提示：选择你喜欢的主题风格，系统会自动保存你的偏好
+            </div>
+        </div>
+        
+        <!-- 隐私提醒 -->
+        <div class="card" style="margin-bottom: 15px;">
+            <div class="card-title">
+                <span>🔒</span>
+                <span>隐私提醒</span>
+            </div>
+            <div style="margin-top: 15px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #FFE4E1;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.5em;">📱</span>
+                        <div>
+                            <div style="font-weight: 500; color: #333;">设备安全提醒</div>
+                            <div style="font-size: 0.8em; color: #999;">检测当前设备使用情况</div>
+                        </div>
+                    </div>
+                    <span id="deviceStatus" style="color: #4CAF50; font-size: 0.85em;">✓ 安全</span>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #FFE4E1;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.5em;">👥</span>
+                        <div>
+                            <div style="font-weight: 500; color: #333;">多设备登录提示</div>
+                            <div style="font-size: 0.8em; color: #999;">同一账号多设备使用风险</div>
+                        </div>
+                    </div>
+                    <span style="color: #FF9800; font-size: 0.85em;">⚠️ 注意</span>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #FFE4E1;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.5em;">💾</span>
+                        <div>
+                            <div style="font-weight: 500; color: #333;">无限存储空间</div>
+                            <div style="font-size: 0.8em; color: #999;">采用IndexedDB技术，存储空间无限制！</div>
+                        </div>
+                    </div>
+                    <span style="color: #4CAF50; font-size: 0.85em;">✓ 无限制</span>
+                </div>
+                <div style="padding: 15px; background: linear-gradient(135deg, #FFF5F5, #FFE8E8); border-radius: 10px; margin-top: 15px;">
+                    <div style="font-size: 0.9em; color: #FF6B8A; line-height: 1.6;">
+                        <strong>⚠️ 重要提醒：</strong><br>
+                        • 日记数据存储在浏览器本地，请勿清除浏览器数据<br>
+                        • 请勿在公共设备上保存登录信息<br>
+                        • 建议定期备份重要日记<br>
+                        • 不同浏览器数据不互通
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 数据储存 -->
+        <div class="card" style="margin-bottom: 15px;">
+            <div class="card-title">
+                <span>💾</span>
+                <span>数据储存</span>
+            </div>
+            
+            <!-- 存储统计 -->
+            <div style="margin-top: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <span style="color: #666; font-size: 0.9em;">存储空间使用</span>
+                    <span id="storageUsed" style="color: #FF6B8A; font-weight: bold;">0 KB</span>
+                </div>
+                <div style="background: #F5F5F5; border-radius: 10px; height: 8px; overflow: hidden;">
+                    <div id="storageBar" style="background: linear-gradient(90deg, #FF6B8A, #FFB6C1); height: 100%; width: 0%; transition: all 0.3s;"></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 0.75em; color: #999;">
+                    <span>已用</span>
+                    <span>共 5MB</span>
+                </div>
+            </div>
+            
+            <!-- 数据统计 -->
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px;">
+                <div style="text-align: center; padding: 15px; background: #FFF8F8; border-radius: 10px;">
+                    <div style="font-size: 1.5em;">📝</div>
+                    <div id="diaryCountStat" style="font-size: 1.2em; font-weight: bold; color: #FF6B8A;">0</div>
+                    <div style="font-size: 0.75em; color: #999;">日记篇数</div>
+                </div>
+                <div style="text-align: center; padding: 15px; background: #FFF8F8; border-radius: 10px; cursor: pointer;" onclick="showAllImages()">
+                    <div style="font-size: 1.5em;">📸</div>
+                    <div id="imageCountStat" style="font-size: 1.2em; font-weight: bold; color: #FF6B8A;">0</div>
+                    <div style="font-size: 0.75em; color: #FF6B8A;">点击查看</div>
+                </div>
+                <div style="text-align: center; padding: 15px; background: #FFF8F8; border-radius: 10px;">
+                    <div style="font-size: 1.5em;">📅</div>
+                    <div id="daysCountStat" style="font-size: 1.2em; font-weight: bold; color: #FF6B8A;">0</div>
+                    <div style="font-size: 0.75em; color: #999;">记录天数</div>
+                </div>
+            </div>
+            
+            <!-- 操作按钮 -->
+            <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;">
+                <button onclick="backupData()" style="width: 100%; padding: 15px; background: linear-gradient(135deg, #4CAF50, #81C784); color: white; border: none; border-radius: 15px; font-size: 1em; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s;">
+                    <span>📥</span> 备份到本地
+                </button>
+                <button onclick="importData()" style="width: 100%; padding: 15px; background: linear-gradient(135deg, #2196F3, #64B5F6); color: white; border: none; border-radius: 15px; font-size: 1em; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s;">
+                    <span>📤</span> 从备份恢复
+                </button>
+                <input type="file" id="importInput" accept=".json" style="display: none;" onchange="handleImport(event)">
+                <button onclick="confirmDeleteData()" style="width: 100%; padding: 15px; background: linear-gradient(135deg, #f44336, #e57373); color: white; border: none; border-radius: 15px; font-size: 1em; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s;">
+                    <span>🗑️</span> 删除所有数据
+                </button>
+            </div>
+        </div>
+        
+        <!-- 版本信息 -->
+        <div style="text-align: center; padding: 20px; color: #CCC; font-size: 0.8em;">
+            <div>桃桃日记 v1.0</div>
+            <div style="margin-top: 5px;">💕 感谢你的使用</div>
+        </div>
+    </div>
+
+    <!-- 编辑个人信息弹窗 -->
+    <div id="editProfileModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center;">
+        <div style="background: white; padding: 25px; border-radius: 20px; width: 90%; max-width: 350px;">
+            <h3 style="color: #FF6B8A; margin-bottom: 20px; text-align: center;">✏️ 编辑个人信息</h3>
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 8px; font-size: 0.9em; color: #666;">👤 昵称</label>
+                <input type="text" id="editNameInput" style="width: 100%; padding: 12px; border: 2px solid #FFE4E1; border-radius: 10px; font-size: 1em; outline: none;">
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 8px; font-size: 0.9em; color: #666;">📱 账号（不可修改）</label>
+                <input type="text" id="editAccountInput" style="width: 100%; padding: 12px; border: 2px solid #FFE4E1; border-radius: 10px; font-size: 1em; outline: none; background: #F5F5F5;" readonly>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 8px; font-size: 0.9em; color: #666;">🔒 新密码（留空则不修改）</label>
+                <input type="password" id="editPasswordInput" placeholder="输入新密码" style="width: 100%; padding: 12px; border: 2px solid #FFE4E1; border-radius: 10px; font-size: 1em; outline: none;">
+            </div>
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-size: 0.9em; color: #666;">🎂 出生日期</label>
+                <input type="date" id="editBirthInput" style="width: 100%; padding: 12px; border: 2px solid #FFE4E1; border-radius: 10px; font-size: 1em; outline: none;">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="closeEditProfile()" style="flex: 1; padding: 12px; background: #F5F5F5; color: #666; border: none; border-radius: 10px; font-size: 1em; cursor: pointer;">取消</button>
+                <button onclick="saveProfile()" style="flex: 1; padding: 12px; background: linear-gradient(135deg, #FF6B8A, #FFB6C1); color: white; border: none; border-radius: 10px; font-size: 1em; cursor: pointer;">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 图片查看弹窗 -->
+    <div id="imageGalleryModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 3000; overflow-y: auto;">
+        <div style="padding: 20px; max-width: 600px; margin: 0 auto;">
+            <!-- 弹窗头部 -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; position: sticky; top: 0; background: rgba(0,0,0,0.9); padding: 10px 0; z-index: 10;">
+                <h3 style="color: white; margin: 0;">📸 我的图片库 <span id="imageCountInModal" style="font-size: 0.8em; color: #FFB6C1;"></span></h3>
+                <button onclick="closeImageGallery()" style="background: none; border: none; color: white; font-size: 1.5em; cursor: pointer; padding: 5px 10px;">✕</button>
+            </div>
+            
+            <!-- 图片统计 -->
+            <div style="display: flex; justify-content: space-around; margin-bottom: 20px;">
+                <div style="text-align: center; color: white;">
+                    <div style="font-size: 1.5em;" id="imageTotalCount">0</div>
+                    <div style="font-size: 0.8em; color: #999;">图片总数</div>
+                </div>
+                <div style="text-align: center; color: white;">
+                    <div style="font-size: 1.5em;" id="imageDiaryCount">0</div>
+                    <div style="font-size: 0.8em; color: #999;">关联日记</div>
+                </div>
+            </div>
+            
+            <!-- 图片网格 -->
+            <div id="imageGalleryGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px;"></div>
+            
+            <!-- 空状态 -->
+            <div id="imageEmptyState" style="display: none; text-align: center; padding: 50px 20px; color: #999;">
+                <div style="font-size: 4em; margin-bottom: 15px;">📷</div>
+                <div style="font-size: 1.1em;">还没有保存任何图片</div>
+                <div style="font-size: 0.9em; margin-top: 10px;">快去写日记并添加图片吧~</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 图片预览大图弹窗 -->
+    <div id="imagePreviewModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 4000; justify-content: center; align-items: center;" onclick="closeImagePreview(event)">
+        <button onclick="closeImagePreviewDirect()" style="position: absolute; top: 15px; right: 15px; background: none; border: none; color: white; font-size: 2em; cursor: pointer; z-index: 10;">✕</button>
+        <img id="previewImage" src="" style="max-width: 90%; max-height: 85%; object-fit: contain; border-radius: 10px;">
+        <div id="previewImageInfo" style="position: absolute; bottom: 20px; left: 0; right: 0; text-align: center; color: white; font-size: 0.9em;"></div>
+    </div>
+
+    <script>
+        // ========== IndexedDB 大容量存储模块 ==========
+        const DB_NAME = 'DiaryDB_v2';
+        const DB_VERSION = 1;
+        let db = null;
+
+        // 初始化 IndexedDB
+        async function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                
+                request.onerror = () => {
+                    console.error('数据库打开失败');
+                    reject(request.error);
+                };
+                
+                request.onsuccess = () => {
+                    db = request.result;
+                    console.log('IndexedDB 初始化成功，存储空间无限制！');
+                    resolve(db);
+                };
+                
+                request.onupgradeneeded = (event) => {
+                    const database = event.target.result;
+                    if (!database.objectStoreNames.contains('diaries')) {
+                        database.createObjectStore('diaries', { keyPath: 'id' });
+                    }
+                    if (!database.objectStoreNames.contains('user')) {
+                        database.createObjectStore('user', { keyPath: 'key' });
+                    }
+                    if (!database.objectStoreNames.contains('settings')) {
+                        database.createObjectStore('settings', { keyPath: 'key' });
+                    }
+                    if (!database.objectStoreNames.contains('images')) {
+                        database.createObjectStore('images', { keyPath: 'id' });
+                    }
+                };
+            });
+        }
+
+        // IndexedDB 操作封装
+        const Storage = {
+            async set(storeName, data) {
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction([storeName], 'readwrite');
+                    const store = transaction.objectStore(storeName);
+                    const request = store.put(data);
+                    request.onsuccess = () => resolve();
+                    request.onerror = () => reject(request.error);
+                });
+            },
+            async get(storeName, key) {
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction([storeName], 'readonly');
+                    const store = transaction.objectStore(storeName);
+                    const request = store.get(key);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+            },
+            async getAll(storeName) {
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction([storeName], 'readonly');
+                    const store = transaction.objectStore(storeName);
+                    const request = store.getAll();
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+            },
+            async remove(storeName, key) {
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction([storeName], 'readwrite');
+                    const store = transaction.objectStore(storeName);
+                    const request = store.delete(key);
+                    request.onsuccess = () => resolve();
+                    request.onerror = () => reject(request.error);
+                });
+            },
+            async clear(storeName) {
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction([storeName], 'readwrite');
+                    const store = transaction.objectStore(storeName);
+                    const request = store.clear();
+                    request.onsuccess = () => resolve();
+                    request.onerror = () => reject(request.error);
+                });
+            }
+        };
+
+        // 获取存储信息
+        async function getStorageInfo() {
+            if (navigator.storage && navigator.storage.estimate) {
+                const est = await navigator.storage.estimate();
+                return {
+                    used: est.usage || 0,
+                    quota: est.quota || 0,
+                    percent: ((est.usage || 0) / (est.quota || 1) * 100).toFixed(2)
+                };
+            }
+            return { used: 0, quota: 0, percent: 0 };
+        }
+        
+        // ========== 数据存储 ==========
+        let currentUser = { name: '', account: '', password: '', birthDate: '' };
+        let usersList = []; // 所有注册用户列表
+        let selectedMood = 'happy';
+        let selectedWeather = 'sunny';
+        let selectedIntensity = 3;
+        let selectedTags = [];
+        let uploadedImages = [];
+        let diaries = [];
+        let currentCalendarMonth = new Date();
+        let dateRanges = { pie: 0, score: 7, intensity: 0, tag: 0 };
+        let currentTheme = 'pink';
+        
+        // ========== 情绪语录库 ==========
+        const moodQuotes = {
+            'party': {
+                icon: '🎉',
+                quotes: [
+                    '昨天的快乐还在延续！今天继续保持这份热情，让好运连连！',
+                    '超级开心的一天！把这份喜悦分享给身边的人吧！',
+                    '昨天的美好时光！今天一定也会有惊喜等着你！'
+                ]
+            },
+            'happy': {
+                icon: '😊',
+                quotes: [
+                    '昨天的开心是今天最好的开始！继续保持微笑吧~',
+                    '开心的一天给你满满正能量！今天会有更多美好发生！',
+                    '昨天的快乐是今天的礼物，愿你今天也笑口常开！'
+                ]
+            },
+            'normal': {
+                icon: '😐',
+                quotes: [
+                    '平凡的日子也有小确幸，今天试着给自己一个小惊喜吧！',
+                    '平静是力量之源。今天可以尝试做一些不同的事~',
+                    '普通的日子也有意义，今天给自己定个小目标吧！'
+                ]
+            },
+            'sad': {
+                icon: '💪',
+                quotes: [
+                    '昨天的难过已经过去，今天是新的一天，要相信自己！',
+                    '低落只是暂时的，阳光总在风雨后。今天对自己好一点~',
+                    '难过的时候更要好好爱自己。今天尝试做点让自己开心的事！'
+                ]
+            },
+            'angry': {
+                icon: '🌸',
+                quotes: [
+                    '昨天的气已经消了吧？今天深呼吸，让心灵重新平静~',
+                    '生气伤身又伤心。今天学会放下，让生活更轻松！',
+                    '新的一天新的开始，昨天的烦恼就让它过去吧！'
+                ]
+            }
+        };
+        
+        // ========== 幸运色 ==========
+        const luckyColors = [
+            { name: '樱花粉', color: '#FFB6C1', desc: '温柔甜美，带来好人缘' },
+            { name: '天空蓝', color: '#87CEEB', desc: '清新宁静，心情平和' },
+            { name: '薄荷绿', color: '#98FB98', desc: '生机勃勃，充满活力' },
+            { name: '阳光黄', color: '#FFD700', desc: '温暖明亮，好运连连' },
+            { name: '薰衣草紫', color: '#E6E6FA', desc: '优雅神秘，灵感涌现' },
+            { name: '珊瑚橙', color: '#FF7F50', desc: '热情活力，积极向上' },
+            { name: '珍珠白', color: '#FFF8DC', desc: '纯洁简约，新的开始' },
+            { name: '玫瑰红', color: '#FF69B4', desc: '浪漫甜蜜，爱情运旺' }
+        ];
+        
+        // ========== 灵感提示 ==========
+        const inspirations = [
+            "今天最让你开心的一件事是什么？",
+            "如果可以给今天的自己一个拥抱，你会说什么？",
+            "今天遇到了什么有趣的人或事？",
+            "此刻你最想感谢的人是谁？",
+            "今天的小确幸是什么？",
+            "今天最想对自己说的话是什么？",
+            "今天想尝试一件什么事？"
+        ];
+
+        // ========== 安慰语录 ==========
+        // 获取多维度组合语录
+        function getComfortQuote(mood, intensity, weather, tags) {
+            const combos = {
+                'party-1': { sunny: '开心的心情配上晴朗的天气，今天会有更多小惊喜等着你！', else: '微微的快乐也很珍贵呢~' },
+                'party-2': { sunny: '超开心！阳光也在为你庆祝呢~今天绝对是好运日！', else: '好心情不需要天气来配合~' },
+                'party-3': { sunny: '完美的心情配上完美的天气！今天值得被记住~', else: '完美不需要天气来证明~' },
+                'happy-1': { sunny: '微微的开心也很美好呢，就像清晨的第一缕阳光~', else: '小确幸最动人了~' },
+                'happy-2': { sunny: '开心的时光总是过得很快，珍惜这份美好吧！', else: '好心情让阴天也变亮~' },
+                'happy-3': { sunny: '刚刚好的心情，刚刚好的天气，一切都刚刚好~', else: '内心平和就是最好的天气~' },
+                'happy-4': { sunny: '比较开心的时候，世界都在为你微笑！', else: '好心情是最好的装扮~' },
+                'happy-5': { sunny: '非常开心！今天一定会很精彩！', else: '超级开心！值得庆祝！' },
+                'normal-1': { sunny: '平静是力量的源泉，休息一下也没关系~', else: '淡定也是一种智慧~' },
+                'normal-2': { sunny: '平静的日子最适合思考人生~', else: '云淡风轻，心情平和' },
+                'normal-3': { sunny: '刚刚好的状态，享受这份宁静~', else: '平静让一切变得更清晰' },
+                'normal-4': { sunny: '比较平静的一天，偶尔放空也是一种智慧~', else: '不急不躁，岁月静好' },
+                'normal-5': { sunny: '内心平静如水，这是与自己好好相处的时光~', else: '平和的心，看世界更清楚' },
+                'sad-1': { sunny: '一点点难过而已，阳光会慢慢融化它~', else: '小情绪很快就会过去的' },
+                'sad-2': { sunny: '有点低落的时候，就让自己休息一下吧', else: '云层总会散开的' },
+                'sad-3': { sunny: '阳光会来的，在那之前好好照顾自己~', else: '低落只是暂时的' },
+                'sad-4': { sunny: '比较难过的时候，要相信黑夜终会过去~', else: '请相信，美好的事物正在路上' },
+                'sad-5': { sunny: '非常难过的时候，请记得你值得被爱、被珍惜~', else: '你不是一个人，有人关心着你' },
+                'angry-1': { sunny: '一点点小情绪没什么大不了的，深呼吸~', else: '深呼吸，冷静一下' },
+                'angry-2': { sunny: '有点生气的时候，试试转移注意力吧', else: '云会飘走的，就像坏情绪一样' },
+                'angry-3': { sunny: '生气伤身又伤心，试着冷静下来吧~', else: '退一步海阔天空' },
+                'angry-4': { sunny: '比较烦躁的时候，请善待自己~', else: '让心情放个假吧' },
+                'angry-5': { sunny: '非常生气的时候，请先保护好自己，深呼吸...', else: '你很重要，请冷静对待自己' }
+            };
+            const tagMap = {
+                '学习': { party: '学习中的快乐最充实！', happy: '学习让你充实，继续加油！', normal: '学习是日积月累~', sad: '学习累了就休息一下吧', angry: '学习压力会过去的' },
+                '工作': { party: '工作中的好心情，效率翻倍！', happy: '工作顺利，心情美美~', normal: '工作稳扎稳打就好~', sad: '工作不顺心？休息一下', angry: '工作中的烦心事不值得生气' },
+                '生活': { party: '美好的生活在等你发现~', happy: '生活在发光！', normal: '生活处处有惊喜', sad: '生活总会好起来的', angry: '生活很美好，不要让小事影响你' },
+                '社交': { party: '和朋友分享快乐吧！', happy: '社交让你更开心！', normal: '社交让生活更丰富~', sad: '和朋友聊聊会好很多的', angry: '沟通是解决问题的桥梁' },
+                '健康': { party: '健康的身体才能享受快乐！', happy: '好身体才有好心情！', normal: '关注健康就是投资未来', sad: '身体健康心灵也会好起来', angry: '好身体是最大的财富' },
+                '家庭': { party: '和家人分享这份快乐吧！', happy: '家庭时光最温馨~', normal: '家是最温暖的港湾', sad: '家人永远是你最坚强的后盾', angry: '家人的爱会包容一切' },
+                '感情': { party: '甜蜜的感情让生活更美好~', happy: '有人爱你，真好！', normal: '感情需要用心经营', sad: '感情的事慢慢来，会好的', angry: '沟通和理解是感情的桥梁' },
+                '兴趣': { party: '追求兴趣让你更快乐！', happy: '爱好让生活精彩！', normal: '兴趣爱好让生活更精彩', sad: '做喜欢的事会让你开心', angry: '沉浸爱好中可以忘却烦恼' }
+            };
+            const defaults = { party: '昨天的快乐还在延续，今天也要元气满满！', happy: '保持这份好心情，你笑起来真好看~', normal: '平凡的日子也有小确幸，慢慢来~', sad: '难过的时候更要好好爱自己', angry: '深呼吸，一切都会好起来的' };
+            if (tags && tags.length > 0) {
+                for (const tag of tags) {
+                    if (tagMap[tag] && tagMap[tag][mood]) return tagMap[tag][mood];
+                }
+            }
+            const combo = combos[mood + '-' + intensity];
+            if (combo) {
+                if (weather === 'sunny' && combo.sunny) return combo.sunny;
+                return combo.else;
+            }
+            return defaults[mood] || '每一天都是新的开始~';
+        }
+
+        // 每日语录（联网获取）
+        let dailyQuote = {
+            content: '今天也要加油鸭~ 🐣',
+            author: '系统'
+        };
+
+        // ========== 联网获取每日语录 ==========
+        async function fetchDailyQuote() {
+            try {
+                // 使用免费的随机语录API
+                const apis = [
+                    'https://api.xygeng.cn/one',
+                    'https://v1.hitokoto.cn?c=i&c=j'
+                ];
+                const randomApi = apis[Math.floor(Math.random() * apis.length)];
+                
+                const response = await fetch(randomApi);
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // 解析不同API的返回格式
+                    if (data.content) {
+                        dailyQuote = {
+                            content: data.content,
+                            author: data.author || '佚名'
+                        };
+                    } else if (data.hitokoto) {
+                        dailyQuote = {
+                            content: data.hitokoto,
+                            author: data.from || '佚名'
+                        };
+                    }
+                }
+            } catch (error) {
+                console.log('获取每日语录失败，使用默认语录');
+                // 使用默认语录库
+                const defaultQuotes = [
+                    '每一个不曾起舞的日子，都是对生命的辜负。',
+                    '生活明朗，万物可爱，人间值得，未来可期。',
+                    '把平凡的日子过成诗，让简单的时光充满温柔。',
+                    '今天的你，比昨天更棒了！',
+                    '愿你被世界温柔以待，也愿你温柔以待这个世界。'
+                ];
+                const today = new Date();
+                const index = (today.getDate() + today.getMonth()) % defaultQuotes.length;
+                dailyQuote = {
+                    content: defaultQuotes[index],
+                    author: '每日语录'
+                };
+            }
+            
+            // 保存今天的语录，避免重复请求
+            const today = new Date().toDateString();
+            localStorage.setItem('dailyQuoteDate', today);
+            localStorage.setItem('dailyQuote', JSON.stringify(dailyQuote));
+            
+            return dailyQuote;
+        }
+
+        // 检查并加载每日语录
+        async function loadDailyQuote() {
+            const today = new Date().toDateString();
+            const savedDate = localStorage.getItem('dailyQuoteDate');
+            const savedQuote = localStorage.getItem('dailyQuote');
+            
+            if (savedDate === today && savedQuote) {
+                dailyQuote = JSON.parse(savedQuote);
+            } else {
+                await fetchDailyQuote();
+            }
+            
+            updateDailyQuoteDisplay();
+        }
+
+        function updateDailyQuoteDisplay() {
+            const quoteElement = document.getElementById('dailyQuoteText');
+            if (quoteElement) {
+                quoteElement.innerHTML = `
+                    <div style="font-style: italic; margin-bottom: 5px;">"${dailyQuote.content}"</div>
+                    <div style="font-size: 0.8em; color: #FFB6C1;">—— ${dailyQuote.author}</div>
+                `;
+            }
+        }
+
+        // ========== 根据多维度生成安慰语录 ==========
+        function generateComfortQuote(mood, intensity, weather, tags) {
+            // 直接使用已有的getComfortQuote函数
+            return getComfortQuote(mood, intensity, weather, tags);
+        }
+
+        // 保存日记时更新安慰语录
+        function updateComfortQuoteForSave(mood, intensity, weather, tags) {
+            const quote = generateComfortQuote(mood, intensity, weather, tags);
+            return quote;
+        }
+        
+        // ========== 更新安慰语录显示 ==========
+        function updateComfortQuoteDisplay() {
+            // 生成多维度安慰语录
+            const quote = generateComfortQuote(selectedMood, selectedIntensity, selectedWeather, selectedTags);
+            
+            // 获取每日语录（联网获取）
+            const dailyText = dailyQuote.content || '';
+            
+            // 组合安慰语录：第一句联网语录 + 第二句多维度安慰语录
+            let firstLine = '';
+            let secondLine = '';
+            
+            if (dailyText) {
+                firstLine = dailyText;
+            }
+            if (quote) {
+                secondLine = quote;
+            }
+            
+            // 更新显示
+            const quoteElement = document.getElementById('comfortQuoteText');
+            const sourceElement = document.getElementById('comfortQuoteSource');
+            
+            if (quoteElement) {
+                let html = '';
+                if (firstLine) {
+                    html += `<div class="first-quote">💫 ${firstLine}</div>`;
+                }
+                if (secondLine) {
+                    html += `<div class="second-quote">💝 ${secondLine}</div>`;
+                }
+                quoteElement.innerHTML = html;
+            }
+            
+            if (sourceElement) {
+                // 来源对应第一句联网语录
+                if (dailyQuote.author && dailyQuote.author !== '系统') {
+                    sourceElement.textContent = `—— ${dailyQuote.author}`;
+                } else {
+                    sourceElement.textContent = '—— 每日语录';
+                }
+            }
+        }
+        
+        // ========== 手动刷新语录 ==========
+        async function refreshComfortQuote() {
+            // 清除今天的缓存，强制重新获取
+            localStorage.removeItem('dailyQuoteDate');
+            localStorage.removeItem('dailyQuote');
+            
+            // 重新获取语录
+            await fetchDailyQuote();
+            
+            // 更新显示
+            updateComfortQuoteDisplay();
+            
+            // 显示提示
+            alert('✨ 已获取新的每日语录！');
+        }
+        
+        // ========== 初始化 ==========
+        window.onload = async function() {
+            await initDB();  // 初始化 IndexedDB
+            await loadUserData();
+            await loadDiaries();
+            await loadTheme();
+            updateDate();
+            renderCalendar();
+            // 联网获取每日语录
+            await loadDailyQuote();
+            // 更新安慰语录显示
+            updateComfortQuoteDisplay();
+        };
+        
+        function updateDate() {
+            const now = new Date();
+            const months = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+            document.getElementById('currentDate').textContent = months[now.getMonth()] + now.getDate() + '日';
+            document.getElementById('currentYear').textContent = now.getFullYear() + '年';
+        }
+        
+        // ========== 用户数据（IndexedDB） ==========
+        async function loadUserData() {
+            try {
+                // 加载用户列表
+                const usersData = await Storage.get('user', 'usersList');
+                usersList = usersData ? usersData.data : [];
+                
+                const saved = await Storage.get('user', 'currentUser');
+                if (saved) {
+                    currentUser = saved.data;
+                    document.getElementById('loginOverlay').classList.add('hidden');
+                    document.getElementById('userDiaryTitle').textContent = currentUser.name + '的日记';
+                    updateGreeting();
+                }
+            } catch (e) {
+                console.log('从旧存储读取用户数据...');
+                const old = localStorage.getItem('diaryUser');
+                if (old) {
+                    currentUser = JSON.parse(old);
+                    await saveUserData();
+                    localStorage.removeItem('diaryUser');
+                    document.getElementById('loginOverlay').classList.add('hidden');
+                    document.getElementById('userDiaryTitle').textContent = currentUser.name + '的日记';
+                    updateGreeting();
+                }
+            }
+        }
+        
+        async function saveUserData() {
+            await Storage.set('user', { key: 'currentUser', data: currentUser });
+        }
+        
+        async function loadDiaries() {
+            try {
+                const allDiaries = await Storage.getAll('diaries');
+                if (allDiaries && allDiaries.length > 0) {
+                    diaries = allDiaries.sort((a, b) => new Date(b.date) - new Date(a.date));
+                }
+            } catch (e) {
+                console.log('从旧存储读取日记...');
+                const saved = localStorage.getItem('diaries');
+                if (saved) {
+                    diaries = JSON.parse(saved);
+                    for (const d of diaries) {
+                        await Storage.set('diaries', d);
+                    }
+                    localStorage.removeItem('diaries');
+                }
+            }
+        }
+        
+        async function saveDiaries() {
+            for (const diary of diaries) {
+                await Storage.set('diaries', diary);
+            }
+        }
+        
+        // 单条保存日记
+        async function saveDiaryToDB(diary) {
+            await Storage.set('diaries', diary);
+        }
+        
+        // ========== 日历功能 ==========
+        let calendarExpanded = false;
+        
+        function renderCalendar() {
+            const year = currentCalendarMonth.getFullYear();
+            const month = currentCalendarMonth.getMonth();
+            
+            document.getElementById('calendarYear').textContent = year + '年';
+            document.getElementById('calendarMonthDisplay').textContent = (month + 1) + '月';
+            
+            const months = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+            document.getElementById('currentDate').textContent = months[new Date().getMonth()] + new Date().getDate() + '日';
+            
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            // 创建日记日期映射
+            const diaryMap = {};
+            diaries.forEach(d => {
+                const date = new Date(d.date);
+                const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+                diaryMap[key] = d.mood;
+            });
+            
+            const today = new Date();
+            const todayKey = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+            const todayDate = today.getDate();
+            
+            let html = '';
+            
+            if (calendarExpanded) {
+                // 展开状态：显示完整日历，按星期排列
+                // 1. 添加空白占位
+                for (let i = 0; i < firstDay; i++) {
+                    html += `<div class="calendar-day"></div>`;
+                }
+                // 2. 当前月日期
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const key = `${year}-${month}-${day}`;
+                    const hasDiary = diaryMap[key];
+                    const isToday = key === todayKey;
+                    const mood = diaryMap[key] || '';
+                    
+                    let classes = 'calendar-day';
+                    if (hasDiary) classes += ' has-diary';
+                    if (isToday) classes += ' today';
+                    
+                    html += `
+                        <div class="${classes}" onclick="showDiaryDetail('${key}')">
+                            <span class="day-number">${day}</span>
+                            <span class="day-mood">${mood}</span>
+                        </div>
+                    `;
+                }
+                // 3. 添加空白补满
+                const totalCells = firstDay + daysInMonth;
+                const remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+                for (let i = 0; i < remaining; i++) {
+                    html += `<div class="calendar-day"></div>`;
+                }
+            } else {
+                // 折叠状态：只显示当前日期所在的那一整行（7天，从周日到周六）
+                // 计算当前行从哪天开始
+                const todayDayOfWeek = today.getDay(); // 0=周日, 1=周一, ..., 6=周六
+                const startDate = todayDate - todayDayOfWeek;
+                
+                for (let i = 0; i < 7; i++) {
+                    const day = startDate + i;
+                    if (day >= 1 && day <= daysInMonth) {
+                        const key = `${year}-${month}-${day}`;
+                        const hasDiary = diaryMap[key];
+                        const isToday = day === todayDate;
+                        const mood = diaryMap[key] || '';
+                        
+                        let classes = 'calendar-day';
+                        if (hasDiary) classes += ' has-diary';
+                        if (isToday) classes += ' today';
+                        
+                        html += `
+                            <div class="${classes}" onclick="showDiaryDetail('${key}')">
+                                <span class="day-number">${day}</span>
+                                <span class="day-mood">${mood}</span>
+                            </div>
+                        `;
+                    } else {
+                        // 空单元格
+                        html += `<div class="calendar-day"></div>`;
+                    }
+                }
+            }
+            
+            document.getElementById('calendarGrid').innerHTML = html;
+        }
+        
+        function toggleCalendar() {
+            calendarExpanded = !calendarExpanded;
+            document.getElementById('toggleBtn').textContent = calendarExpanded ? '▼ 收起' : '▲ 展开';
+            renderCalendar();
+        }
+        
+        function changeMonth(delta) {
+            currentCalendarMonth.setMonth(currentCalendarMonth.getMonth() + delta);
+            calendarExpanded = false;
+            document.getElementById('toggleBtn').textContent = '▲ 展开';
+            renderCalendar();
+        }
+        
+        // ========== 登录/注册表单切换 ==========
+        function switchForm(form) {
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const loginTab = document.getElementById('loginTab');
+            const registerTab = document.getElementById('registerTab');
+            const toggleText = document.getElementById('toggleText');
+            
+            if (form === 'login') {
+                loginForm.classList.add('active');
+                registerForm.classList.remove('active');
+                loginTab.classList.add('active');
+                registerTab.classList.remove('active');
+                toggleText.innerHTML = '还没有账号？<a onclick="switchForm(\'register\')">立即注册</a>';
+            } else {
+                loginForm.classList.remove('active');
+                registerForm.classList.add('active');
+                loginTab.classList.remove('active');
+                registerTab.classList.add('active');
+                toggleText.innerHTML = '已有账号？<a onclick="switchForm(\'login\')">立即登录</a>';
+            }
+        }
+        
+        // ========== 密码显示/隐藏切换 ==========
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            if (input.type === 'password') {
+                input.type = 'text';
+            } else {
+                input.type = 'password';
+            }
+        }
+        
+        // ========== 保存用户列表 ==========
+        async function saveUsersList() {
+            await Storage.set('user', { key: 'usersList', data: usersList });
+        }
+        
+        // ========== 注册处理 ==========
+        async function handleRegister(e) {
+            e.preventDefault();
+            const name = document.getElementById('regName').value.trim();
+            const account = document.getElementById('regAccount').value.trim();
+            const password = document.getElementById('regPassword').value.trim();
+            const birthDate = document.getElementById('birthDate').value;
+            
+            if (!name || !account || !password || !birthDate) {
+                alert('请填写完整信息');
+                return;
+            }
+            
+            if (password.length < 6) {
+                alert('密码长度不能少于6位');
+                return;
+            }
+            
+            // 检查账号是否已被注册
+            const existingUser = usersList.find(u => u.account === account);
+            if (existingUser) {
+                alert('该账号已被注册，请换一个账号');
+                return;
+            }
+            
+            // 创建新用户
+            const newUser = { name, account, password, birthDate };
+            usersList.push(newUser);
+            await saveUsersList();
+            
+            // 自动登录
+            currentUser = { ...newUser };
+            await saveUserData();
+            
+            document.getElementById('loginOverlay').classList.add('hidden');
+            document.getElementById('userDiaryTitle').textContent = name + '的日记';
+            updateGreeting();
+            
+            alert('🎉 注册成功！欢迎 ' + name + ' 加入桃桃日记！');
+        }
+        
+        // ========== 登录处理 ==========
+        async function handleLogin(e) {
+            e.preventDefault();
+            const account = document.getElementById('loginAccount').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            
+            if (!account || !password) {
+                alert('请填写完整信息');
+                return;
+            }
+            
+            // 查找用户
+            const user = usersList.find(u => u.account === account);
+            if (!user) {
+                alert('账号不存在，请先注册');
+                switchForm('register');
+                return;
+            }
+            
+            if (user.password !== password) {
+                alert('密码错误，请重新输入');
+                return;
+            }
+            
+            currentUser = { ...user };
+            await saveUserData();
+            
+            document.getElementById('loginOverlay').classList.add('hidden');
+            document.getElementById('userDiaryTitle').textContent = user.name + '的日记';
+            updateGreeting();
+        }
+        
+        // ========== 退出登录 ==========
+        async function logout() {
+            if (confirm('确定要退出登录吗？')) {
+                await Storage.remove('user', 'currentUser');
+                currentUser = { name: '', account: '', password: '', birthDate: '' };
+                document.getElementById('loginOverlay').classList.remove('hidden');
+                // 清空登录表单
+                document.getElementById('loginAccount').value = '';
+                document.getElementById('loginPassword').value = '';
+            }
+        }
+        
+        // ========== 更新问候语 ==========
+        function updateGreeting() {
+            // 获取当前时间段
+            const hour = new Date().getHours();
+            let timeGreeting = '';
+            if (hour < 6) timeGreeting = '夜深了';
+            else if (hour < 9) timeGreeting = '早上好';
+            else if (hour < 12) timeGreeting = '上午好';
+            else if (hour < 14) timeGreeting = '中午好';
+            else if (hour < 18) timeGreeting = '下午好';
+            else if (hour < 22) timeGreeting = '晚上好';
+            else timeGreeting = '夜深了';
+            
+            // 获取昨天的心情
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().split('T')[0];
+            
+            const yesterdayDiary = diaries.find(d => d.date.split('T')[0] === yesterdayStr);
+            const yesterdayMood = yesterdayDiary ? yesterdayDiary.moodType : 'normal';
+            
+            // 获取对应语录
+            const quoteData = moodQuotes[yesterdayMood] || moodQuotes['normal'];
+            const quotes = quoteData.quotes;
+            const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+            
+            // 更新问候
+            document.getElementById('greetingIcon').textContent = quoteData.icon;
+            document.getElementById('greetingText').textContent = timeGreeting + '，' + currentUser.name + '！';
+            document.getElementById('greetingQuote').textContent = randomQuote;
+            
+            // 计算年龄
+            let ageText = '';
+            if (currentUser.birthDate) {
+                const birth = new Date(currentUser.birthDate);
+                const now = new Date();
+                let age = now.getFullYear() - birth.getFullYear();
+                const m = now.getMonth() - birth.getMonth();
+                if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) {
+                    age--;
+                }
+                if (age > 0) {
+                    ageText = '🌸 ' + age + '岁';
+                }
+            }
+            
+            // 显示用户信息
+            let infoBar = '';
+            if (ageText) infoBar += '<span>' + ageText + '</span>';
+            if (yesterdayDiary) {
+                infoBar += '<span>昨天：' + yesterdayDiary.mood + '</span>';
+            }
+            document.getElementById('userInfoBar').innerHTML = infoBar;
+        }
+        
+        // ========== 幸运色 ==========
+        function generateLuckyColor() {
+            const random = luckyColors[Math.floor(Math.random() * luckyColors.length)];
+            const result = document.getElementById('luckyColorResult');
+            result.innerHTML = `
+                <div style="background: ${random.color}; padding: 20px; border-radius: 15px; color: #333;">
+                    <div style="font-size: 1.3em; font-weight: bold; margin-bottom: 10px;">${random.name}</div>
+                    <div style="font-size: 0.9em;">${random.desc}</div>
+                </div>
+            `;
+            result.classList.add('show');
+        }
+        
+        // ========== 情绪选择 ==========
+        function selectMood(element) {
+            document.querySelectorAll('.mood-item').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+            selectedMood = element.dataset.mood;
+            // 显示情绪评分选项
+            document.getElementById('moodIntensitySelector').style.display = 'block';
+            // 更新安慰语录
+            updateComfortQuoteDisplay();
+        }
+        
+        // ========== 情绪强度选择 ==========
+        function selectIntensity(element) {
+            document.querySelectorAll('.intensity-item').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+            selectedIntensity = parseInt(element.dataset.score);
+            // 更新安慰语录
+            updateComfortQuoteDisplay();
+        }
+        
+        // ========== 标签选择 ==========
+        function toggleTag(element) {
+            element.classList.toggle('selected');
+            const tag = element.dataset.tag;
+            if (element.classList.contains('selected')) {
+                if (!selectedTags.includes(tag)) {
+                    selectedTags.push(tag);
+                }
+            } else {
+                selectedTags = selectedTags.filter(t => t !== tag);
+            }
+            // 更新安慰语录
+            updateComfortQuoteDisplay();
+        }
+        
+        // ========== 图片上传 ==========
+        function handleImageUpload(event) {
+            const files = event.target.files;
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        uploadedImages.push(e.target.result);
+                        renderImagePreviews();
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+            event.target.value = '';
+        }
+        
+        function renderImagePreviews() {
+            const container = document.getElementById('imagePreviewList');
+            container.innerHTML = uploadedImages.map((img, index) => `
+                <div class="image-preview-item">
+                    <img src="${img}" alt="预览">
+                    <div class="remove-btn" onclick="removeImage(${index})">×</div>
+                </div>
+            `).join('');
+        }
+        
+        function removeImage(index) {
+            uploadedImages.splice(index, 1);
+            renderImagePreviews();
+        }
+        
+        // ========== 天气选择 ==========
+        function selectWeather(element) {
+            document.querySelectorAll('.weather-item').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+            selectedWeather = element.dataset.weather;
+            // 更新安慰语录
+            updateComfortQuoteDisplay();
+        }
+        
+        // ========== 灵感与安慰 ==========
+        function showInspiration() {
+            // 根据当前选择的情绪、强度、天气、标签生成安慰语录
+            const quote = generateComfortQuote(selectedMood, selectedIntensity, selectedWeather, selectedTags);
+            document.getElementById('promptText').textContent = quote;
+        }
+
+        // 切换到标准灵感提示
+        function showRandomInspiration() {
+            const random = inspirations[Math.floor(Math.random() * inspirations.length)];
+            document.getElementById('promptText').textContent = random;
+        }
+        
+        // ========== 保存日记（IndexedDB） ==========
+        async function saveDiary() {
+            const content = document.getElementById('diaryContent').value.trim();
+            
+            if (!content) {
+                alert('请写下今天的心情~');
+                return;
+            }
+            
+            const moodEmojis = {
+                'party': '🥳', 'happy': '😊', 'normal': '😐', 'sad': '😢', 'angry': '😠'
+            };
+            
+            const weatherEmojis = {
+                'sunny': '☀️', 'cloudy': '☁️', 'rainy': '🌧️', 'snowy': '❄️', 'storm': '⛈️'
+            };
+            
+            const diary = {
+                id: Date.now().toString(),
+                date: new Date().toISOString(),
+                content: content,
+                mood: moodEmojis[selectedMood],
+                moodType: selectedMood,
+                moodIntensity: selectedIntensity,
+                moodTags: [...selectedTags],
+                weather: weatherEmojis[selectedWeather],
+                images: [...uploadedImages],
+                isFavorite: false,
+                comfortQuote: document.getElementById('comfortQuoteText')?.textContent || ''
+            };
+            
+            // 保存到 IndexedDB
+            await Storage.set('diaries', diary);
+            diaries.unshift(diary);
+            
+            // 清空输入
+            document.getElementById('diaryContent').value = '';
+            uploadedImages = [];
+            renderImagePreviews();
+            
+            // 重置标签选择
+            selectedTags = [];
+            document.querySelectorAll('.mood-tag-item').forEach(el => el.classList.remove('selected'));
+            
+            // 更新问候语
+            updateGreeting();
+            
+            // 刷新日历
+            renderCalendar();
+            
+            alert('日记保存成功！✨');
+        }
+        
+        // ========== 页面切换 ==========
+        function showHistory() {
+            document.getElementById('mainContent').classList.add('hidden');
+            document.getElementById('historyPage').classList.add('show');
+            renderHistory();
+        }
+        
+        function showMain() {
+            document.getElementById('mainContent').classList.remove('hidden');
+            document.getElementById('historyPage').classList.remove('show');
+            document.getElementById('statsPage').classList.remove('show');
+            document.getElementById('userPage').classList.remove('show');
+        }
+        
+        // ========== 统计分析 ==========
+        function showStats() {
+            document.getElementById('mainContent').classList.add('hidden');
+            document.getElementById('historyPage').classList.remove('show');
+            document.getElementById('statsPage').classList.remove('show');
+            document.getElementById('userPage').classList.remove('show');
+            document.getElementById('statsPage').classList.add('show');
+            renderStats();
+        }
+
+        // ========== 用户中心 ==========
+        function showUser() {
+            document.getElementById('mainContent').classList.add('hidden');
+            document.getElementById('historyPage').classList.remove('show');
+            document.getElementById('statsPage').classList.remove('show');
+            document.getElementById('userPage').classList.add('show');
+            updateUserPage();
+        }
+
+        function updateUserPage() {
+            // 更新个人信息显示
+            if (currentUser.name) {
+                document.getElementById('userProfileName').textContent = currentUser.name;
+                document.getElementById('userProfileAccount').textContent = '账号：' + currentUser.account;
+                if (currentUser.birthDate) {
+                    const birth = new Date(currentUser.birthDate);
+                    const now = new Date();
+                    let age = now.getFullYear() - birth.getFullYear();
+                    const m = now.getMonth() - birth.getMonth();
+                    if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) age--;
+                    if (age > 0) {
+                        document.getElementById('userProfileAge').textContent = age + '岁 | ' + currentUser.birthDate;
+                    } else {
+                        document.getElementById('userProfileAge').textContent = currentUser.birthDate;
+                    }
+                }
+            } else {
+                document.getElementById('userProfileName').textContent = '未登录';
+                document.getElementById('userProfileAccount').textContent = '账号：--';
+                document.getElementById('userProfileAge').textContent = '点击编辑';
+            }
+            
+            // 更新存储统计
+            updateStorageStats();
+        }
+
+        function editProfile() {
+            document.getElementById('editNameInput').value = currentUser.name || '';
+            document.getElementById('editAccountInput').value = currentUser.account || '';
+            document.getElementById('editBirthInput').value = currentUser.birthDate || '';
+            document.getElementById('editPasswordInput').value = '';
+            document.getElementById('editProfileModal').style.display = 'flex';
+        }
+
+        function closeEditProfile() {
+            document.getElementById('editProfileModal').style.display = 'none';
+        }
+
+        async function saveProfile() {
+            const name = document.getElementById('editNameInput').value.trim();
+            const account = document.getElementById('editAccountInput').value.trim();
+            const newPassword = document.getElementById('editPasswordInput').value.trim();
+            const birthDate = document.getElementById('editBirthInput').value;
+            
+            if (!name) {
+                alert('请输入昵称');
+                return;
+            }
+            
+            currentUser.name = name;
+            currentUser.birthDate = birthDate;
+            
+            // 如果输入了新密码则更新
+            if (newPassword) {
+                if (newPassword.length < 6) {
+                    alert('密码长度不能少于6位');
+                    return;
+                }
+                currentUser.password = newPassword;
+            }
+            
+            // 更新用户列表中的用户信息
+            const userIndex = usersList.findIndex(u => u.account === account);
+            if (userIndex !== -1) {
+                usersList[userIndex] = { ...currentUser };
+                await saveUsersList();
+            }
+            
+            await saveUserData();
+            
+            document.getElementById('userDiaryTitle').textContent = name + '的日记';
+            updateUserPage();
+            updateGreeting();
+            closeEditProfile();
+            alert('个人信息已更新！✨');
+        }
+
+        // ========== 主题切换（IndexedDB） ==========
+        async function loadTheme() {
+            try {
+                const saved = await Storage.get('settings', 'theme');
+                if (saved) {
+                    currentTheme = saved.data;
+                    applyTheme(saved.data);
+                }
+            } catch (e) {
+                const saved = localStorage.getItem('diaryTheme');
+                if (saved) {
+                    currentTheme = saved;
+                    applyTheme(saved);
+                    await Storage.set('settings', { key: 'theme', data: saved });
+                }
+            }
+        }
+
+        function applyTheme(theme) {
+            // 移除所有主题类
+            document.body.classList.remove('theme-blue', 'theme-green', 'theme-purple', 'theme-orange', 'theme-dark');
+            
+            // 应用新主题（樱花粉是默认，不需要添加类）
+            if (theme !== 'pink') {
+                document.body.classList.add('theme-' + theme);
+            }
+            
+            // 更新选中状态
+            document.querySelectorAll('.theme-option').forEach(el => {
+                el.classList.remove('selected');
+                if (el.dataset.theme === theme) {
+                    el.classList.add('selected');
+                }
+            });
+        }
+
+        async function selectTheme(theme) {
+            currentTheme = theme;
+            await Storage.set('settings', { key: 'theme', data: theme });
+            applyTheme(theme);
+        }
+
+        // ========== 存储统计（IndexedDB无限制） ==========
+        async function updateStorageStats() {
+            // 显示 IndexedDB 存储信息
+            const info = await getStorageInfo();
+            
+            let sizeText = '';
+            if (info.quota > 0) {
+                const usedMB = (info.used / (1024 * 1024)).toFixed(2);
+                const quotaGB = (info.quota / (1024 * 1024 * 1024)).toFixed(1);
+                sizeText = `${usedMB} MB / ~${quotaGB} GB`;
+                document.getElementById('storageBar').style.width = info.percent + '%';
+            } else {
+                sizeText = '无限制存储';
+                document.getElementById('storageBar').style.width = '0%';
+            }
+            
+            document.getElementById('storageUsed').textContent = sizeText;
+            
+            // 更新数据统计
+            document.getElementById('diaryCountStat').textContent = diaries.length;
+            
+            // 统计图片数量
+            let imageCount = 0;
+            diaries.forEach(d => {
+                if (d.images) imageCount += d.images.length;
+            });
+            document.getElementById('imageCountStat').textContent = imageCount;
+            
+            // 统计记录天数
+            const uniqueDates = new Set();
+            diaries.forEach(d => {
+                const date = new Date(d.date).toDateString();
+                uniqueDates.add(date);
+            });
+            document.getElementById('daysCountStat').textContent = uniqueDates.size;
+        }
+
+        // ========== 数据备份 ==========
+        function backupData() {
+            const backup = {
+                version: '1.0',
+                exportDate: new Date().toISOString(),
+                user: currentUser,
+                diaries: diaries
+            };
+            
+            const dataStr = JSON.stringify(backup, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            const date = new Date().toISOString().split('T')[0];
+            a.download = 'diary_backup_' + date + '.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            alert('✅ 备份成功！文件已下载到本地');
+        }
+
+        function importData() {
+            document.getElementById('importInput').click();
+        }
+
+        function handleImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const backup = JSON.parse(e.target.result);
+                    
+                    if (!backup.diaries || !Array.isArray(backup.diaries)) {
+                        throw new Error('无效的备份文件');
+                    }
+                    
+                    // 询问用户如何处理
+                    const choice = confirm('发现 ' + backup.diaries.length + ' 篇日记\n\n点击"确定"：合并到现有日记\n点击"取消"：替换所有日记');
+                    
+                    if (choice) {
+                        // 合并
+                        const existingIds = new Set(diaries.map(d => d.id));
+                        backup.diaries.forEach(d => {
+                            if (!existingIds.has(d.id)) {
+                                diaries.push(d);
+                            }
+                        });
+                    } else {
+                        // 替换
+                        diaries = backup.diaries;
+                        if (backup.user) {
+                            currentUser = backup.user;
+                            saveUserData();
+                        }
+                    }
+                    
+                    saveDiaries();
+                    updateUserPage();
+                    renderCalendar();
+                    updateGreeting();
+                    
+                    alert('✅ 导入成功！共导入 ' + backup.diaries.length + ' 篇日记');
+                } catch (err) {
+                    alert('❌ 导入失败：' + err.message);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        function confirmDeleteData() {
+            const diaryCount = diaries.length;
+            const confirmed = confirm(
+                '⚠️ 危险操作警告！\n\n' +
+                '您确定要删除所有数据吗？\n\n' +
+                '将删除：\n' +
+                '• ' + diaryCount + ' 篇日记\n' +
+                '• 所有日记图片\n' +
+                '• 个人设置\n\n' +
+                '此操作不可恢复！\n' +
+                '建议先备份数据！\n\n' +
+                '如确定删除，请点击"确定"'
+            );
+            
+            if (confirmed) {
+                const doubleConfirm = confirm('❤️ 最后的确认\n\n确定要删除这些宝贵的回忆吗？\n\n点击"确定"将永久删除所有数据');
+                
+                if (doubleConfirm) {
+                    // 删除所有数据
+                    localStorage.removeItem('diaries');
+                    localStorage.removeItem('diaryUser');
+                    localStorage.removeItem('diaryTheme');
+                    
+                    diaries = [];
+                    currentUser = { name: '', account: '', password: '', birthDate: '' };
+                    currentTheme = 'pink';
+                    
+                    // 重置主题
+                    document.body.classList.remove('theme-blue', 'theme-green', 'theme-purple', 'theme-orange', 'theme-dark');
+                    document.querySelectorAll('.theme-option').forEach(el => {
+                        el.classList.remove('selected');
+                        if (el.dataset.theme === 'pink') el.classList.add('selected');
+                    });
+                    
+                    // 显示登录页面
+                    document.getElementById('loginOverlay').classList.remove('hidden');
+                    document.getElementById('userPage').classList.remove('show');
+                    document.getElementById('mainContent').classList.add('hidden');
+                    
+                    alert('🗑️ 所有数据已删除\n\n感谢您的使用，期待再会！');
+                }
+            }
+        }
+
+        // ========== 图片库查看 ==========
+        function showAllImages() {
+            // 收集所有图片并按年月分组
+            const imagesByYearMonth = {};
+            const diariesWithImages = new Set();
+            
+            diaries.forEach((diary, diaryIndex) => {
+                if (diary.images && diary.images.length > 0) {
+                    const date = new Date(diary.date);
+                    const year = date.getFullYear();
+                    const month = date.getMonth() + 1;
+                    const dayStr = month + '月' + date.getDate() + '日';
+                    
+                    const key = year + '-' + (month < 10 ? '0' : '') + month;
+                    if (!imagesByYearMonth[key]) {
+                        imagesByYearMonth[key] = {
+                            year: year,
+                            month: month,
+                            images: []
+                        };
+                    }
+                    
+                    diary.images.forEach((img) => {
+                        imagesByYearMonth[key].images.push({
+                            src: img,
+                            diaryIndex: diaryIndex,
+                            dateStr: dayStr,
+                            mood: diary.mood || '😊',
+                            content: diary.content
+                        });
+                    });
+                    diariesWithImages.add(diaryIndex);
+                }
+            });
+            
+            // 排序年份（降序）
+            const sortedKeys = Object.keys(imagesByYearMonth).sort((a, b) => b.localeCompare(a));
+            
+            // 更新统计
+            let totalImages = 0;
+            sortedKeys.forEach(key => {
+                totalImages += imagesByYearMonth[key].images.length;
+            });
+            
+            document.getElementById('imageCountInModal').textContent = '(' + totalImages + '张)';
+            document.getElementById('imageTotalCount').textContent = totalImages;
+            document.getElementById('imageDiaryCount').textContent = diariesWithImages.size;
+            
+            const grid = document.getElementById('imageGalleryGrid');
+            const emptyState = document.getElementById('imageEmptyState');
+            
+            if (totalImages === 0) {
+                grid.style.display = 'none';
+                emptyState.style.display = 'block';
+            } else {
+                grid.style.display = 'block';
+                emptyState.style.display = 'none';
+                
+                let html = '';
+                
+                // 按年份分组显示
+                let currentYear = null;
+                sortedKeys.forEach((key) => {
+                    const group = imagesByYearMonth[key];
+                    
+                    // 年份标题
+                    if (group.year !== currentYear) {
+                        currentYear = group.year;
+                        html += `
+                            <div style="grid-column: 1 / -1; padding: 15px 0 10px 0; margin-top: 10px; border-top: 2px solid rgba(255,255,255,0.2);">
+                                <div style="font-size: 1.8em; font-weight: bold; color: #FF6B8A; text-shadow: 0 2px 10px rgba(255,107,138,0.5);">
+                                    ${group.year}
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    // 月份标题
+                    const monthNames = ['', '一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
+                    html += `
+                        <div style="grid-column: 1 / -1; padding: 8px 0 5px 0; display: flex; align-items: center; gap: 10px;">
+                            <div style="background: linear-gradient(135deg, #FF6B8A, #FFB6C1); color: white; padding: 3px 12px; border-radius: 12px; font-size: 0.85em; font-weight: 500;">
+                                ${monthNames[group.month]}
+                            </div>
+                            <div style="color: #999; font-size: 0.8em;">${group.images.length} 张照片</div>
+                            <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.1);"></div>
+                        </div>
+                    `;
+                    
+                    // 该月所有图片
+                    group.images.forEach((img, idx) => {
+                        const uniqueId = key + '_' + idx;
+                        html += `
+                            <div style="position: relative; border-radius: 12px; overflow: hidden; cursor: pointer; aspect-ratio: 1; background: rgba(255,255,255,0.1);" onclick="showImagePreview('${img.src.replace(/'/g, "\\'")}', '${img.dateStr}', '${img.mood}', ${img.diaryIndex})">
+                                <img src="${img.src}" style="width: 100%; height: 100%; object-fit: cover;" alt="图片">
+                                <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.8)); padding: 25px 8px 8px;">
+                                    <div style="font-size: 0.75em; color: white;">${img.dateStr} ${img.mood}</div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                });
+                
+                grid.innerHTML = html;
+            }
+            
+            document.getElementById('imageGalleryModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeImageGallery() {
+            document.getElementById('imageGalleryModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        function showImagePreview(src, dateStr, mood, diaryIndex) {
+            const diary = diaries[diaryIndex];
+            const previewInfo = document.getElementById('previewImageInfo');
+            const previewModal = document.getElementById('imagePreviewModal');
+            
+            document.getElementById('previewImage').src = src;
+            
+            let infoHtml = `<div>${dateStr} ${mood}</div>`;
+            if (diary) {
+                infoHtml += `<div style="color: #FFB6C1; margin-top: 5px; max-width: 80%; margin-left: auto; margin-right: auto;">"${diary.content.substring(0, 50)}${diary.content.length > 50 ? '...' : ''}"</div>`;
+            }
+            previewInfo.innerHTML = infoHtml;
+            
+            previewModal.style.display = 'flex';
+        }
+
+        function closeImagePreview(event) {
+            if (event.target.id === 'imagePreviewModal') {
+                document.getElementById('imagePreviewModal').style.display = 'none';
+            }
+        }
+
+        function closeImagePreviewDirect() {
+            document.getElementById('imagePreviewModal').style.display = 'none';
+        }
+        
+        // ========== 日期范围选择 ==========
+        function selectDateRange(chartType, days) {
+            // 更新选中状态
+            const selectorId = chartType + 'DateSelector';
+            document.querySelectorAll(`#${selectorId} .date-option`).forEach(el => {
+                el.classList.remove('selected');
+            });
+            document.querySelector(`#${selectorId} .date-option[data-range="${days}"]`).classList.add('selected');
+            
+            // 保存选择
+            dateRanges[chartType] = days;
+            
+            // 重新渲染该图表
+            renderChartByType(chartType);
+        }
+        
+        function getFilteredDiaries(rangeDays) {
+            if (rangeDays === 0) return diaries; // 0表示全部
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - rangeDays);
+            return diaries.filter(d => new Date(d.date) >= cutoffDate);
+        }
+        
+        function renderChartByType(chartType) {
+            switch(chartType) {
+                case 'pie':
+                    renderMoodPieChart();
+                    break;
+                case 'score':
+                    renderMoodScoreChart();
+                    break;
+                case 'trend':
+                    renderTrendChart();
+                    break;
+                case 'intensity':
+                    renderIntensityChart();
+                    break;
+                case 'tag':
+                    renderTagChart();
+                    break;
+            }
+        }
+        
+        function renderMoodPieChart() {
+            const filteredDiaries = getFilteredDiaries(dateRanges.pie);
+            const moodCounts = { 'party': 0, 'happy': 0, 'normal': 0, 'sad': 0, 'angry': 0 };
+            const moodEmojis = { 'party': '🥳', 'happy': '😊', 'normal': '😐', 'sad': '😢', 'angry': '😠' };
+            const moodNames = { 'party': '超开心', 'happy': '开心', 'normal': '一般', 'sad': '难过', 'angry': '生气' };
+            const moodColors = { 'party': '#FF6B8A', 'happy': '#FFD700', 'normal': '#87CEEB', 'sad': '#E6E6FA', 'angry': '#98FB98' };
+            
+            filteredDiaries.forEach(d => {
+                if (moodCounts[d.moodType] !== undefined) {
+                    moodCounts[d.moodType]++;
+                }
+            });
+            
+            const total = filteredDiaries.length || 1;
+            let currentAngle = 0;
+            let gradientParts = [];
+            
+            Object.keys(moodCounts).forEach(mood => {
+                if (moodCounts[mood] > 0) {
+                    const angle = (moodCounts[mood] / total) * 360;
+                    gradientParts.push(`${moodColors[mood]} ${currentAngle}deg ${currentAngle + angle}deg`);
+                    currentAngle += angle;
+                }
+            });
+            
+            if (gradientParts.length === 0) {
+                gradientParts = ['#FFE4E1 0deg 360deg'];
+            }
+            
+            document.getElementById('moodPieChart').innerHTML = `
+                <div class="pie-chart-container">
+                    <div class="pie-chart" style="background: conic-gradient(${gradientParts.join(', ')})"></div>
+                    <div class="pie-center">📊</div>
+                </div>
+            `;
+            
+            let legendHtml = '';
+            Object.keys(moodCounts).forEach(mood => {
+                const percent = ((moodCounts[mood] / total) * 100).toFixed(0);
+                legendHtml += `
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: ${moodColors[mood]}"></div>
+                        <span>${moodEmojis[mood]} ${moodNames[mood]} ${percent}%</span>
+                    </div>
+                `;
+            });
+            document.getElementById('moodLegend').innerHTML = legendHtml;
+        }
+        
+        // 情绪评分统计
+        function renderMoodScoreChart() {
+            const rangeDays = dateRanges.score;
+            const filteredDiaries = getFilteredDiaries(rangeDays);
+            
+            const moodScores = { 'party': 0, 'happy': 0, 'normal': 0, 'sad': 0, 'angry': 0 };
+            const moodEmojis = { 'party': '🥳', 'happy': '😊', 'normal': '😐', 'sad': '😢', 'angry': '😠' };
+            const moodNames = { 'party': '超开心', 'happy': '开心', 'normal': '一般', 'sad': '难过', 'angry': '生气' };
+            const scoreValues = { 'party': 2, 'happy': 1, 'normal': 0, 'sad': -1, 'angry': -1 };
+            const moodColors = { 'party': '#FF6B8A', 'happy': '#FFD700', 'normal': '#87CEEB', 'sad': '#9370DB', 'angry': '#90EE90' };
+            
+            filteredDiaries.forEach(d => {
+                if (moodScores[d.moodType] !== undefined) {
+                    moodScores[d.moodType] += scoreValues[d.moodType];
+                }
+            });
+            
+            // 计算总分
+            const totalScore = Object.keys(moodScores).reduce((sum, mood) => sum + moodScores[mood], 0);
+            const userName = currentUser.name || '亲爱的';
+            
+            // 生成情绪评分展示
+            let scoreHtml = '<div style="display: flex; justify-content: space-around; align-items: flex-end; padding: 10px 5px;">';
+            Object.keys(moodScores).forEach(mood => {
+                const score = moodScores[mood];
+                const barHeight = Math.abs(score) * 20 + 15;
+                const isPositive = score >= 0;
+                scoreHtml += `
+                    <div style="display: flex; flex-direction: column; align-items: center;">
+                        <div style="font-size: 1.2em;">${moodEmojis[mood]}</div>
+                        <div style="position: relative; height: ${barHeight}px; width: 35px; display: flex; align-items: ${isPositive ? 'flex-end' : 'flex-start'}; justify-content: center; padding-bottom: ${isPositive ? '0' : '5px'}; padding-top: ${isPositive ? '5px' : '0'};">
+                            <div style="position: relative; width: 100%; height: ${isPositive ? barHeight : barHeight/2}px; background: ${isPositive ? 'linear-gradient(to top, #FFB6C1, #FF6B8A)' : 'linear-gradient(to top, #9370DB, #8A2BE2)'}; border-radius: 4px 4px 0 0; display: flex; align-items: ${isPositive ? 'flex-start' : 'flex-end'}; justify-content: center;">
+                                <span style="font-size: 0.8em; color: ${isPositive ? '#FF6B8A' : '#8A2BE2'}; font-weight: bold; margin-top: ${isPositive ? '5px' : '0'}; margin-bottom: ${isPositive ? '0' : '5px'};">${score > 0 ? '+' : ''}${score}</span>
+                            </div>
+                        </div>
+                        <div style="margin-top: 3px; font-size: 0.65em; color: #666;">${moodNames[mood]}</div>
+                    </div>
+                `;
+            });
+            scoreHtml += '</div>';
+            
+            // 根据总分生成安慰语句
+            let encouragement = '';
+            if (totalScore >= 10) {
+                encouragement = '🌟 太棒了！您的情绪状态非常积极阳光，继续保持这份好心情！';
+            } else if (totalScore >= 5) {
+                encouragement = '😊 您的情绪状态很不错哦！继续保持乐观积极的心态！';
+            } else if (totalScore >= 0) {
+                encouragement = '💪 您的情绪状态比较平稳，生活中有起有落都是正常的，继续加油！';
+            } else if (totalScore >= -5) {
+                encouragement = '🌈 最近可能有些不如意，但请相信一切都会好起来的，记得照顾好自己~';
+            } else {
+                encouragement = '💝 最近的时光可能让您感到低落，请记得您并不孤单，愿这些温暖的话语能给您带来一丝安慰。一切都会好起来的！';
+            }
+            
+            document.getElementById('moodScoreChart').innerHTML = scoreHtml;
+            document.getElementById('moodScoreTotal').innerHTML = `
+                <div style="text-align: center; padding: 15px; background: linear-gradient(135deg, #FFF5F5, #FFE8E8); border-radius: 15px; margin-top: 10px;">
+                    <div style="font-size: 1em; color: #666; margin-bottom: 5px;">${userName}同学，您近来（${getRangeLabel(rangeDays)}）的情绪总分为</div>
+                    <div style="font-size: 2em; color: ${totalScore >= 0 ? '#FF6B8A' : '#8A2BE2'}; font-weight: bold;">${totalScore > 0 ? '+' : ''}${totalScore} 分</div>
+                    <div style="font-size: 0.85em; color: #999; margin-top: 8px;">${encouragement}</div>
+                </div>
+            `;
+        }
+        
+        function getRangeLabel(days) {
+            const labels = { 7: '近一个星期', 30: '近一个月', 180: '近半年', 365: '近一年' };
+            return labels[days] || '所选时段';
+        }
+        
+        function renderTrendChart() {
+            const rangeDays = dateRanges.trend;
+            const days = rangeDays === 0 ? 30 : rangeDays;
+            const trendData = [];
+            const labels = [];
+            
+            // 近半年(180)和近一年(365)按月分组显示，当前月份在中间
+            if (rangeDays === 180 || rangeDays === 365) {
+                const now = new Date();
+                const monthCount = rangeDays === 180 ? 6 : 12;
+                const halfCount = Math.floor(monthCount / 2);
+                
+                // 收集前后各halfCount个月的数据
+                const tempData = [];
+                for (let m = halfCount; m >= -halfCount; m--) {
+                    const targetDate = new Date(now.getFullYear(), now.getMonth() - m, 1);
+                    const monthName = `${targetDate.getMonth() + 1}月`;
+                    
+                    // 统计该月的平均情绪强度
+                    const monthDiaries = diaries.filter(d => {
+                        const diaryDate = new Date(d.date);
+                        return diaryDate.getFullYear() === targetDate.getFullYear() && 
+                               diaryDate.getMonth() === targetDate.getMonth();
+                    });
+                    
+                    if (monthDiaries.length > 0) {
+                        const avgIntensity = monthDiaries.reduce((sum, d) => sum + (d.moodIntensity || 0), 0) / monthDiaries.length;
+                        tempData.push({ label: monthName, value: avgIntensity.toFixed(1) });
+                    } else {
+                        tempData.push({ label: monthName, value: 0 });
+                    }
+                }
+                
+                let trendHtml = '';
+                const gap = tempData.length > 6 ? 25 : 35; // 柱状图之间的间距
+                trendHtml += `<div style="display: flex; justify-content: space-around; align-items: flex-end; height: 120px; padding: 0 10px;">`;
+                tempData.forEach((item, i) => {
+                    const value = parseFloat(item.value);
+                    const height = value > 0 ? Math.max((value / 5) * 100, 15) : 10;
+                    const isCurrentMonth = i === halfCount;
+                    const barWidth = tempData.length > 6 ? 20 : 25;
+                    trendHtml += `
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div style="position: relative; height: ${height}px; width: ${barWidth}px; background: linear-gradient(to top, ${isCurrentMonth ? '#FF6B8A' : '#FFB6C1'}, ${isCurrentMonth ? '#FF4081' : '#FF6B8A'}); border-radius: 6px 6px 0 0; ${isCurrentMonth ? 'box-shadow: 0 0 8px rgba(255,64,129,0.5);' : ''}">
+                                ${value > 0 ? `<span style="position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 0.75em; color: #FF6B8A; font-weight: bold;">${item.value}</span>` : ''}
+                            </div>
+                            <div style="margin-top: 5px; font-size: 0.7em; color: ${isCurrentMonth ? '#FF6B8A' : '#666'}; font-weight: ${isCurrentMonth ? 'bold' : 'normal'};">${item.label}</div>
+                        </div>
+                    `;
+                });
+                trendHtml += '</div>';
+                document.getElementById('moodTrendChart').innerHTML = trendHtml;
+            } else {
+                // 近半个月(15天)和近一个月(30天)按日期显示，格式如"4.3"
+                for (let i = days - 1; i >= 0; i--) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - i);
+                    const dateStr = date.toISOString().split('T')[0];
+                    const dayDiary = diaries.find(d => d.date.split('T')[0] === dateStr);
+                    trendData.push(dayDiary ? dayDiary.moodIntensity : 0);
+                    
+                    // 格式化为"4.3"形式
+                    const dateLabel = `${date.getMonth() + 1}.${date.getDate()}`;
+                    labels.push(dateLabel);
+                }
+                
+                let trendHtml = '';
+                const maxIntensity = Math.max(...trendData.filter(v => v > 0), 1);
+                const barWidth = Math.max(10, Math.min(25, 500 / days));
+                trendData.forEach((value, i) => {
+                    const height = value > 0 ? Math.max((value / 5) * 100, 15) : 10;
+                    trendHtml += `
+                        <div style="display: flex; flex-direction: column; align-items: center; width: ${barWidth}px;">
+                            <div style="position: relative; height: ${height}px; width: 100%; background: linear-gradient(to top, #FFB6C1, #FF6B8A); border-radius: 4px 4px 0 0;">
+                                ${value > 0 ? `<span style="position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 0.6em; color: #FF6B8A;">${value}</span>` : ''}
+                            </div>
+                            <div style="margin-top: 3px; font-size: 0.6em; color: #666; white-space: nowrap;">${labels[i]}</div>
+                        </div>
+                    `;
+                });
+                document.getElementById('moodTrendChart').innerHTML = `<div style="display: flex; justify-content: space-between; align-items: flex-end; height: 120px; padding: 0 5px; overflow-x: auto;">${trendHtml}</div>`;
+            }
+        }
+        
+        function renderIntensityChart() {
+            const filteredDiaries = getFilteredDiaries(dateRanges.intensity);
+            const intensityCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+            const intensityLabels = { 1: '一点点', 2: '有点儿', 3: '刚刚好', 4: '比较', 5: '非常' };
+            
+            filteredDiaries.forEach(d => {
+                if (d.moodIntensity && intensityCounts[d.moodIntensity] !== undefined) {
+                    intensityCounts[d.moodIntensity]++;
+                }
+            });
+            
+            const maxCount = Math.max(...Object.values(intensityCounts), 1);
+            let intensityHtml = '';
+            Object.keys(intensityCounts).forEach(score => {
+                const height = (intensityCounts[score] / maxCount) * 100;
+                intensityHtml += `
+                    <div style="display: flex; flex-direction: column; align-items: center;">
+                        <div class="intensity-bar" style="height: ${Math.max(height, 10)}px;">
+                            <span class="intensity-num">${intensityCounts[score]}</span>
+                        </div>
+                        <div class="intensity-label">${intensityLabels[score]}</div>
+                    </div>
+                `;
+            });
+            document.getElementById('intensityChart').innerHTML = intensityHtml;
+        }
+        
+        function renderTagChart() {
+            const filteredDiaries = getFilteredDiaries(dateRanges.tag);
+            const tagCounts = {};
+            const tagColors = ['#FF6B8A', '#87CEEB', '#98FB98', '#FFD700', '#E6E6FA', '#FF7F50', '#FF69B4', '#FFF8DC'];
+            const tagIcons = { '学习': '📚', '工作': '💼', '生活': '🏠', '社交': '👥', '健康': '💪', '家庭': '👨‍👩‍👧', '感情': '💕', '兴趣': '🎨' };
+            
+            filteredDiaries.forEach(d => {
+                if (d.moodTags) {
+                    d.moodTags.forEach(tag => {
+                        tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+                    });
+                }
+            });
+            
+            let tagHtml = '';
+            Object.keys(tagCounts).sort((a, b) => tagCounts[b] - tagCounts[a]).forEach((tag, i) => {
+                const size = Math.min(20 + tagCounts[tag] * 2, 35);
+                tagHtml += `
+                    <div class="tag-item" style="background: ${tagColors[i % tagColors.length]}; font-size: ${size}px;">
+                        ${tagIcons[tag] || '🏷️'} ${tag} (${tagCounts[tag]})
+                    </div>
+                `;
+            });
+            document.getElementById('tagChart').innerHTML = tagHtml || '<div style="color: #999;">暂无标签数据</div>';
+        }
+        
+        function renderStats() {
+            if (diaries.length === 0) {
+                document.getElementById('moodPieChart').innerHTML = '<div style="color: #999; text-align: center;">暂无数据</div>';
+                document.getElementById('moodLegend').innerHTML = '';
+                document.getElementById('moodScoreChart').innerHTML = '';
+                document.getElementById('moodScoreTotal').innerHTML = '';
+                document.getElementById('intensityChart').innerHTML = '';
+                document.getElementById('tagChart').innerHTML = '';
+                document.getElementById('overallStats').innerHTML = '<div style="color: #999;">还没有日记哦~</div>';
+                return;
+            }
+            
+            // 渲染各个图表
+            renderMoodPieChart();
+            renderMoodScoreChart();
+            renderIntensityChart();
+            renderTagChart();
+            
+            // 总体统计（使用全部数据）
+            const totalWords = diaries.reduce((sum, d) => sum + (d.content ? d.content.length : 0), 0);
+            const avgIntensity = (diaries.reduce((sum, d) => sum + (d.moodIntensity || 0), 0) / diaries.length).toFixed(1);
+            
+            // 标签统计
+            const tagCounts = {};
+            diaries.forEach(d => {
+                if (d.moodTags) {
+                    d.moodTags.forEach(tag => {
+                        tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+                    });
+                }
+            });
+            
+            document.getElementById('overallStats').innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                    <div style="background: #FFF0F5; padding: 15px; border-radius: 15px; text-align: center;">
+                        <div style="font-size: 2em;">📝</div>
+                        <div style="color: #FF6B8A; font-size: 1.5em; font-weight: bold;">${diaries.length}</div>
+                        <div style="color: #999; font-size: 0.8em;">日记总数</div>
+                    </div>
+                    <div style="background: #FFF8F8; padding: 15px; border-radius: 15px; text-align: center;">
+                        <div style="font-size: 2em;">✍️</div>
+                        <div style="color: #FF6B8A; font-size: 1.5em; font-weight: bold;">${totalWords}</div>
+                        <div style="color: #999; font-size: 0.8em;">总字数</div>
+                    </div>
+                    <div style="background: #FFF8F8; padding: 15px; border-radius: 15px; text-align: center;">
+                        <div style="font-size: 2em;">💫</div>
+                        <div style="color: #FF6B8A; font-size: 1.5em; font-weight: bold;">${avgIntensity}</div>
+                        <div style="color: #999; font-size: 0.8em;">平均情绪强度</div>
+                    </div>
+                    <div style="background: #FFF0F5; padding: 15px; border-radius: 15px; text-align: center;">
+                        <div style="font-size: 2em;">📅</div>
+                        <div style="color: #FF6B8A; font-size: 1.5em; font-weight: bold;">${Object.keys(tagCounts).length}</div>
+                        <div style="color: #999; font-size: 0.8em;">使用标签数</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // ========== 历史日记过滤状态 ==========
+        let currentTagFilter = 'all';
+        let showFavoritesOnly = false;
+        let currentDiaryId = null;
+        
+        // ========== 折叠状态 ==========
+        let collapsedYears = {};
+        let collapsedMonths = {};
+        
+        // ========== 获取星期几 ==========
+        function getWeekday(dateStr) {
+            const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+            const date = new Date(dateStr);
+            return weekdays[date.getDay()];
+        }
+        
+        // ========== 按情绪标签筛选 ==========
+        function filterByTag(tag) {
+            currentTagFilter = tag;
+            // 更新UI
+            document.querySelectorAll('.filter-tag').forEach(el => {
+                el.classList.remove('selected');
+                if (el.dataset.tag === tag) {
+                    el.classList.add('selected');
+                }
+            });
+            renderHistory();
+        }
+        
+        // ========== 只看重要日记切换 ==========
+        function toggleFavoritesFilter() {
+            showFavoritesOnly = document.getElementById('showFavoritesOnly').checked;
+            renderHistory();
+        }
+        
+        // ========== 切换年份折叠 ==========
+        function toggleYear(year) {
+            collapsedYears[year] = !collapsedYears[year];
+            renderHistory();
+        }
+        
+        // ========== 切换月份折叠 ==========
+        function toggleMonth(year, month) {
+            const key = `${year}-${month}`;
+            collapsedMonths[key] = !collapsedMonths[key];
+            renderHistory();
+        }
+        
+        // ========== 渲染历史日记 ==========
+        function renderHistory() {
+            const list = document.getElementById('historyList');
+            
+            // 应用过滤
+            let filteredDiaries = [...diaries];
+            
+            // 按标签过滤
+            if (currentTagFilter !== 'all') {
+                filteredDiaries = filteredDiaries.filter(d => 
+                    d.moodTags && d.moodTags.includes(currentTagFilter)
+                );
+            }
+            
+            // 只看重要日记
+            if (showFavoritesOnly) {
+                filteredDiaries = filteredDiaries.filter(d => d.isFavorite);
+            }
+            
+            if (filteredDiaries.length === 0) {
+                list.innerHTML = '<div style="text-align: center; color: #999; padding: 50px;">还没有日记哦~<br>快去写一篇吧！</div>';
+                return;
+            }
+            
+            // 按年月分组
+            const groupedDiaries = {};
+            filteredDiaries.forEach(d => {
+                const date = new Date(d.date);
+                const year = date.getFullYear();
+                const month = date.getMonth() + 1;
+                const key = `${year}-${month}`;
+                if (!groupedDiaries[key]) {
+                    groupedDiaries[key] = {
+                        year: year,
+                        month: month,
+                        diaries: []
+                    };
+                }
+                groupedDiaries[key].diaries.push(d);
+            });
+            
+            // 按年份分组
+            const yearGroups = {};
+            Object.values(groupedDiaries).forEach(g => {
+                if (!yearGroups[g.year]) {
+                    yearGroups[g.year] = {
+                        year: g.year,
+                        months: []
+                    };
+                }
+                yearGroups[g.year].months.push(g);
+            });
+            
+            // 排序（年份降序）
+            const sortedYears = Object.keys(yearGroups).sort((a, b) => b - a);
+            
+            const monthNames = ['', '一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
+            
+            let html = '';
+            sortedYears.forEach(year => {
+                const yearGroup = yearGroups[year];
+                const isYearCollapsed = collapsedYears[year];
+                const yearDiaryCount = yearGroup.months.reduce((sum, m) => sum + m.diaries.length, 0);
+                
+                // 年份标题（可点击折叠）
+                html += `
+                    <div class="year-group ${isYearCollapsed ? 'collapsed' : ''}" onclick="toggleYear(${year})">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span>🌟</span>
+                            <span>${year}年</span>
+                            <span style="font-size: 0.8em; opacity: 0.8;">(${yearDiaryCount}篇)</span>
+                        </div>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                `;
+                
+                // 如果年份展开，显示月份
+                if (!isYearCollapsed) {
+                    // 按月份降序排序
+                    yearGroup.months.sort((a, b) => b.month - a.month);
+                    
+                    yearGroup.months.forEach(monthGroup => {
+                        const monthKey = `${year}-${monthGroup.month}`;
+                        const isMonthCollapsed = collapsedMonths[monthKey];
+                        
+                        // 月份标题（可点击折叠）
+                        html += `
+                            <div class="month-group ${isMonthCollapsed ? 'collapsed' : ''}" onclick="toggleMonth(${year}, ${monthGroup.month})">
+                                <span>${monthNames[monthGroup.month]}</span>
+                                <span style="color: #999; font-size: 0.85em;">${monthGroup.diaries.length}篇</span>
+                                <span class="toggle-icon">▼</span>
+                            </div>
+                        `;
+                        
+                        // 如果月份展开，显示日记列表
+                        if (!isMonthCollapsed) {
+                            monthGroup.diaries.forEach(d => {
+                                const date = new Date(d.date);
+                                const dateStr = `${date.getMonth() + 1}月${date.getDate()}日`;
+                                const weekday = getWeekday(d.date);
+                                const intensityText = ['', '一点点', '有点儿', '刚刚好', '比较', '非常'][d.moodIntensity] || '刚刚好';
+                                const moodEmojis = { 'party': '🎉', 'happy': '😊', 'normal': '😐', 'sad': '😢', 'angry': '😠' };
+                                const moodEmoji = moodEmojis[d.mood] || '😊';
+                                const weatherEmojis = { 'sunny': '☀️', 'cloudy': '⛅', 'rainy': '🌧️', 'snowy': '❄️', 'storm': '⛈️' };
+                                const weatherEmoji = weatherEmojis[d.weather] || '🌤️';
+                                const favoriteIcon = d.isFavorite ? '❤️' : '🤍';
+                                const tagsHtml = d.moodTags && d.moodTags.length > 0 
+                                    ? `<div style="margin-top: 8px; display: flex; gap: 5px; flex-wrap: wrap;">${d.moodTags.map(t => `<span style="background: #FFE4E1; padding: 2px 8px; border-radius: 10px; font-size: 0.75em; color: #FF6B8A;">${t}</span>`).join('')}</div>` 
+                                    : '';
+                                
+                                // 显示部分内容（最多50字）
+                                const previewContent = d.content.length > 50 ? d.content.substring(0, 50) + '...' : d.content;
+                                const hasMore = d.content.length > 50;
+                                
+                                html += `
+                                    <div class="diary-in-month" onclick="showDiaryDetail('${d.id}')">
+                                        <div class="diary-list-item" style="margin-left: 10px;">
+                                            <div class="diary-list-header">
+                                                <div style="display: flex; align-items: center; gap: 8px;">
+                                                    <span class="diary-list-date">${dateStr}</span>
+                                                    <span style="color: #999; font-size: 0.8em;">${weekday}</span>
+                                                </div>
+                                                <div style="display: flex; align-items: center; gap: 10px;">
+                                                    <span style="font-size: 1.2em;">${favoriteIcon}</span>
+                                                    <span class="diary-list-mood">${moodEmoji}</span>
+                                                </div>
+                                            </div>
+                                            <div style="font-size: 0.8em; color: #FF6B8A; margin: 5px 0;">
+                                                ${intensityText} · ${weatherEmoji} ${d.weather}
+                                            </div>
+                                            <div class="diary-list-content">${previewContent}${hasMore ? '<span style="color: #FF6B8A;"> 点击查看全文...</span>' : ''}</div>
+                                            ${tagsHtml}
+                                        </div>
+                                    </div>
+                                `;
+                            });
+                        }
+                    });
+                }
+            });
+            
+            list.innerHTML = html;
+        }
+        
+        // ========== 查看日记详情 ==========
+        function showDiaryDetail(diaryId) {
+            const diary = diaries.find(d => d.id == diaryId);
+            if (!diary) return;
+            
+            currentDiaryId = diaryId;
+            
+            const date = new Date(diary.date);
+            const dateStr = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+            const weekday = getWeekday(diary.date);
+            const moodEmojis = { 'party': '🎉 超开心', 'happy': '😊 开心', 'normal': '😐 一般', 'sad': '😢 难过', 'angry': '😠 生气' };
+            const moodEmoji = moodEmojis[diary.mood] || '😊';
+            const weatherEmojis = { 'sunny': '☀️ 晴天', 'cloudy': '⛅ 多云', 'rainy': '🌧️ 雨天', 'snowy': '❄️ 雪天', 'storm': '⛈️ 暴风雨' };
+            const weatherEmoji = weatherEmojis[diary.weather] || '🌤️';
+            const intensityText = ['', '一点点', '有点儿', '刚刚好', '比较', '非常'][diary.moodIntensity] || '刚刚好';
+            const favoriteIcon = diary.isFavorite ? '❤️' : '🤍';
+            
+            document.getElementById('diaryDetailDate').textContent = dateStr;
+            document.getElementById('diaryDetailWeekday').textContent = weekday;
+            document.getElementById('diaryDetailMood').innerHTML = `<span style="font-size: 1.2em;">${moodEmoji}</span> · ${intensityText}`;
+            document.getElementById('diaryDetailWeather').textContent = weatherEmoji;
+            document.getElementById('diaryDetailContent').textContent = diary.content;
+            document.getElementById('diaryDetailFavorite').textContent = favoriteIcon;
+            
+            // 标签
+            if (diary.moodTags && diary.moodTags.length > 0) {
+                document.getElementById('diaryDetailTags').innerHTML = `<div style="display: flex; gap: 5px; flex-wrap: wrap;">${diary.moodTags.map(t => `<span style="background: #FFE4E1; padding: 2px 10px; border-radius: 10px; font-size: 0.85em; color: #FF6B8A;">${t}</span>`).join('')}</div>`;
+            } else {
+                document.getElementById('diaryDetailTags').innerHTML = '';
+            }
+            
+            // 图片展示
+            const imageSection = document.getElementById('diaryDetailImages');
+            if (diary.images && diary.images.length > 0) {
+                let imageHtml = `<div style="margin-top: 15px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                        <span style="font-size: 1.1em;">📷</span>
+                        <span style="color: #FF6B8A; font-weight: 500;">照片 (${diary.images.length}张)</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px;">`;
+                
+                diary.images.forEach((img, idx) => {
+                    imageHtml += `
+                        <div style="position: relative; cursor: pointer; transition: transform 0.2s;" 
+                             onclick="showFullImage('${img}', ${idx}, ${JSON.stringify(diary.images).replace(/"/g, '&quot;')})"
+                             onmouseover="this.style.transform='scale(1.05)'"
+                             onmouseout="this.style.transform='scale(1)'">
+                            <img src="${img}" style="width: 100%; height: 80px; object-fit: cover; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                            <div style="position: absolute; bottom: 4px; right: 4px; background: rgba(0,0,0,0.5); color: white; font-size: 0.7em; padding: 2px 6px; border-radius: 8px;">${idx + 1}</div>
+                        </div>`;
+                });
+                
+                imageHtml += `</div></div>`;
+                imageSection.innerHTML = imageHtml;
+            } else {
+                imageSection.innerHTML = '';
+            }
+            
+            // 安慰语录
+            if (diary.comfortQuote) {
+                document.getElementById('diaryDetailQuote').innerHTML = `<div style="margin-bottom: 5px;">💫 ${diary.comfortQuote}</div>`;
+            } else {
+                document.getElementById('diaryDetailQuote').innerHTML = '';
+            }
+            
+            document.getElementById('diaryDetailModal').style.display = 'flex';
+        }
+        
+        // ========== 切换日记收藏状态 ==========
+        function toggleDiaryFavorite() {
+            const diary = diaries.find(d => d.id == currentDiaryId);
+            if (!diary) return;
+            
+            diary.isFavorite = !diary.isFavorite;
+            saveDiaries();
+            
+            // 更新UI
+            document.getElementById('diaryDetailFavorite').textContent = diary.isFavorite ? '❤️' : '🤍';
+            document.getElementById('diaryDetailFavorite').classList.add('active');
+            setTimeout(() => {
+                document.getElementById('diaryDetailFavorite').classList.remove('active');
+            }, 600);
+            
+            // 重新渲染列表以更新心心图标
+            renderHistory();
+        }
+        
+        // ========== 关闭日记详情 ==========
+        function closeDiaryDetail() {
+            document.getElementById('diaryDetailModal').style.display = 'none';
+        }
+        
+        // ========== 查看大图（画廊模式）==========
+        let galleryImages = [];
+        let galleryIndex = 0;
+        
+        function showFullImage(src, index, images) {
+            galleryImages = images || [src];
+            galleryIndex = index || 0;
+            
+            const modal = document.createElement('div');
+            modal.id = 'imageGalleryModal';
+            modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:3000;display:flex;flex-direction:column;align-items:center;justify-content:center;';
+            
+            modal.innerHTML = `
+                <div style="position:absolute;top:15px;right:20px;display:flex;align-items:center;gap:15px;">
+                    <span id="galleryCounter" style="color:white;font-size:1em;">${galleryIndex + 1} / ${galleryImages.length}</span>
+                    <span onclick="closeImageGallery()" style="color:white;font-size:1.8em;cursor:pointer;opacity:0.8;">✕</span>
+                </div>
+                <div onclick="prevImage()" style="position:absolute;left:15px;top:50%;transform:translateY(-50%);color:white;font-size:3em;cursor:pointer;opacity:0.5;user-select:none;">‹</div>
+                <div onclick="nextImage()" style="position:absolute;right:15px;top:50%;transform:translateY(-50%);color:white;font-size:3em;cursor:pointer;opacity:0.5;user-select:none;">›</div>
+                <img id="galleryImage" src="${src}" style="max-width:90%;max-height:80%;border-radius:15px;box-shadow:0 10px 40px rgba(0,0,0,0.5);">
+                <div style="position:absolute;bottom:20px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:90%;">
+                    ${galleryImages.map((img, i) => `
+                        <div onclick="jumpToImage(${i})" style="width:50px;height:50px;overflow:hidden;border-radius:8px;border:2px solid ${i === galleryIndex ? '#FF6B8A' : 'transparent'};cursor:pointer;opacity:${i === galleryIndex ? '1' : '0.6'};transition:all 0.2s;">
+                            <img src="${img}" style="width:100%;height:100%;object-fit:cover;">
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // 键盘控制
+            document.addEventListener('keydown', handleGalleryKey);
+        }
+        
+        function prevImage() {
+            galleryIndex = (galleryIndex - 1 + galleryImages.length) % galleryImages.length;
+            updateGalleryImage();
+        }
+        
+        function nextImage() {
+            galleryIndex = (galleryIndex + 1) % galleryImages.length;
+            updateGalleryImage();
+        }
+        
+        function jumpToImage(index) {
+            galleryIndex = index;
+            updateGalleryImage();
+        }
+        
+        function updateGalleryImage() {
+            document.getElementById('galleryImage').src = galleryImages[galleryIndex];
+            document.getElementById('galleryCounter').textContent = `${galleryIndex + 1} / ${galleryImages.length}`;
+            
+            // 更新缩略图选中状态
+            document.querySelectorAll('#imageGalleryModal > div:last-child > div').forEach((thumb, i) => {
+                thumb.style.borderColor = i === galleryIndex ? '#FF6B8A' : 'transparent';
+                thumb.style.opacity = i === galleryIndex ? '1' : '0.6';
+            });
+        }
+        
+        function closeImageGallery() {
+            const modal = document.getElementById('imageGalleryModal');
+            if (modal) modal.remove();
+            document.removeEventListener('keydown', handleGalleryKey);
+        }
+        
+        function handleGalleryKey(e) {
+            if (e.key === 'ArrowLeft') prevImage();
+            if (e.key === 'ArrowRight') nextImage();
+            if (e.key === 'Escape') closeImageGallery();
+        }
+        
+        // ========== PWA 安装提示 ==========
+        let deferredPrompt;
+        const installBanner = document.createElement('div');
+        installBanner.id = 'installBanner';
+        installBanner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:linear-gradient(135deg,#FF6B8A,#FFB6C1);color:white;padding:15px 20px;display:none;justify-content:space-between;align-items:center;z-index:9999;box-shadow:0 -4px 15px rgba(0,0,0,0.1);font-size:0.9em;';
+        installBanner.innerHTML = '<span>📱 立即安装桃桃日记到手机</span><button onclick="installApp()" style="background:white;color:#FF6B8A;border:none;padding:8px 16px;border-radius:20px;font-weight:bold;cursor:pointer;">安装</button><span onclick="dismissInstall()" style="margin-left:10px;cursor:pointer;opacity:0.8;">✕</span>';
+        document.body.appendChild(installBanner);
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBanner.style.display = 'flex';
+        });
+
+        async function installApp() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    installBanner.style.display = 'none';
+                }
+                deferredPrompt = null;
+            }
+        }
+
+        function dismissInstall() {
+            installBanner.style.display = 'none';
+        }
+
+        // ========== 应用自动更新检测 ==========
+        const APP_VERSION = '1.0.0';
+        const VERSION_URL = 'https://yao20051103.github.io/taotao-diary/manifest.json';
+        
+        async function checkForUpdates() {
+            try {
+                const res = await fetch(VERSION_URL + '?t=' + Date.now());
+                const data = await res.json();
+                const latestVersion = data.version || data.name;
+                
+                if (APP_VERSION !== latestVersion && !localStorage.getItem('updateDismissed_' + latestVersion)) {
+                    showUpdateNotification(latestVersion);
+                }
+            } catch (e) {
+                console.log('检查更新失败');
+            }
+        }
+        
+        function showUpdateNotification(newVersion) {
+            const notification = document.createElement('div');
+            notification.id = 'updateNotification';
+            notification.style.cssText = 'position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#4CAF50,#81C784);color:white;padding:15px 20px;display:flex;justify-content:space-between;align-items:center;z-index:10000;box-shadow:0 4px 15px rgba(0,0,0,0.2);font-size:0.9em;';
+            notification.innerHTML = `
+                <span>🎉 发现新版本 v${newVersion}，刷新即可更新！</span>
+                <div>
+                    <button onclick="refreshForUpdate()" style="background:white;color:#4CAF50;border:none;padding:8px 16px;border-radius:20px;font-weight:bold;cursor:pointer;margin-right:10px;">刷新更新</button>
+                    <span onclick="dismissUpdate('${newVersion}')" style="cursor:pointer;opacity:0.8;">✕</span>
+                </div>
+            `;
+            document.body.appendChild(notification);
+        }
+        
+        function refreshForUpdate() {
+            location.reload();
+        }
+        
+        function dismissUpdate(version) {
+            localStorage.setItem('updateDismissed_' + version, 'true');
+            const el = document.getElementById('updateNotification');
+            if (el) el.remove();
+        }
+        
+        // 启动时检查更新（延迟3秒）
+        setTimeout(checkForUpdates, 3000);
+
+        // 注册Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then(reg => console.log('Service Worker注册成功'))
+                    .catch(err => console.log('Service Worker注册失败', err));
+            });
+        }
+    </script>
+</body>
+</html>
