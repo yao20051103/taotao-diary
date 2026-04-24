@@ -63,8 +63,7 @@ jobs:
       - name: Configure Gradle for Java 21
         run: |
           cd taotao-diary-app/android
-          mkdir -p gradle
-          echo 'org.gradle.java.home=/usr/lib/jvm/temurin-21-amd64' >> gradle.properties
+          echo "org.gradle.java.home=$JAVA_HOME" >> gradle.properties
 
       - name: Sync Capacitor
         run: |
