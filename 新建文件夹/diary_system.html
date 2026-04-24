@@ -18,6 +18,45 @@
             padding: 0;
             box-sizing: border-box;
         }
+        
+        // ========== 应用自动更新检测 ==========
+        const APP_VERSION = '1.0.0';
+        const VERSION_URL = 'https://yao20051103.github.io/taotao-diary/manifest.json';
+        
+        async function checkForUpdates() {
+            try {
+                const res = await fetch(VERSION_URL + '?t=' + Date.now());
+                const data = await res.json();
+                const latestVersion = data.version || data.name;
+                
+                if (APP_VERSION !== latestVersion && !localStorage.getItem('updateDismissed_' + latestVersion)) {
+                    showUpdateNotification(latestVersion);
+                }
+            } catch (e) {
+                console.log('检查更新失败');
+            }
+        }
+        
+        function showUpdateNotification(newVersion) {
+            const notification = document.createElement('div');
+            notification.id = 'updateNotification';
+            notification.style.cssText = 'position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#4CAF50,#81C784);color:white;padding:15px 20px;display:flex;justify-content:space-between;align-items:center;z-index:10000;box-shadow:0 4px 15px rgba(0,0,0,0.2);font-size:0.9em;';
+            notification.innerHTML = '<span>🎉 发现新版本 v' + newVersion + '，刷新即可更新！</span><div><button onclick="refreshForUpdate()" style="background:white;color:#4CAF50;border:none;padding:8px 16px;border-radius:20px;font-weight:bold;cursor:pointer;margin-right:10px;">刷新更新</button><span onclick="dismissUpdate(\'' + newVersion + '\')" style="cursor:pointer;opacity:0.8;">✕</span></div>';
+            document.body.appendChild(notification);
+        }
+        
+        function refreshForUpdate() {
+            location.reload();
+        }
+        
+        function dismissUpdate(version) {
+            localStorage.setItem('updateDismissed_' + version, 'true');
+            const el = document.getElementById('updateNotification');
+            if (el) el.remove();
+        }
+        
+        setTimeout(checkForUpdates, 3000);
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFai SC', 'Microsoft YaHei', sans-serif;
             background: linear-gradient(180deg, #FFF5F5 0%, #FFE8E8 100%);
