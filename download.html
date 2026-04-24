@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#FF6B8A">
+    <title>桃桃日记 - 下载安装</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(180deg, #FFF5F5 0%, #FFE8E8 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 10px 40px rgba(255, 107, 138, 0.2);
+            text-align: center;
+        }
+        h1 { color: #FF6B8A; font-size: 24px; margin-bottom: 10px; }
+        .description { color: #666; font-size: 14px; line-height: 1.6; margin-bottom: 30px; }
+        .download-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #FF6B8A 0%, #FF8E9B 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        .install-hint {
+            background: #FFF5F5;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            text-align: left;
+        }
+        .install-hint h3 { color: #FF6B8A; font-size: 14px; margin-bottom: 10px; }
+        .install-hint ol { color: #666; font-size: 12px; line-height: 1.8; padding-left: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="新建文件夹/icom.page.jpg" alt="App Icon" style="width:80px;border-radius:15px;margin-bottom:20px;">
+        <h1>桃桃日记</h1>
+        <p style="color:#999;margin-bottom:30px;">版本 1.0.0</p>
+        <p class="description">一款温馨的日记应用，记录每一天的小美好</p>
+        
+        <a href="https://github.com/YOUR_USERNAME/YOUR_REPO/releases/latest/download/app-debug.apk" 
+           class="download-btn" target="_blank">
+            📱 下载安装包 (APK)
+        </a>
+        
+        <a href="新建文件夹/diary_system.html" 
+           class="download-btn" 
+           style="background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);">
+            🌐 打开网页版
+        </a>
+
+        <div style="margin:20px 0;">
+            <p style="color:#666;margin-bottom:10px;">扫码下载（微信/支付宝）</p>
+            <img src="新建文件夹/qrcode.png" alt="QR Code" style="width:150px;height:150px;">
+        </div>
+
+        <div class="install-hint">
+            <h3>📋 安装说明</h3>
+            <ol>
+                <li>点击「下载安装包」下载 APK</li>
+                <li>下载完成后点击打开</li>
+                <li>如提示禁止安装：设置→安全→开启「未知来源」</li>
+                <li>安装完成即可使用</li>
+            </ol>
+        </div>
+    </div>
+</body>
+</html>
