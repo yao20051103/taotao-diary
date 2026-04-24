@@ -65,6 +65,11 @@ jobs:
           cd taotao-diary-app/android
           echo "org.gradle.java.home=$JAVA_HOME" >> gradle.properties
 
+      - name: Clean Gradle Cache
+        run: |
+          rm -rf ~/.gradle/caches/
+          mkdir -p ~/.gradle/caches/
+
       - name: Sync Capacitor
         run: |
           cd taotao-diary-app
@@ -74,7 +79,7 @@ jobs:
         run: |
           cd taotao-diary-app/android
           chmod +x ./gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew clean assembleDebug --no-build-cache --no-daemon
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
