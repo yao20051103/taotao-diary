@@ -1,0 +1,74 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Create project directory
+        run: |
+          mkdir -p taotao-diary-app
+          
+      - name: Initialize npm project
+        run: |
+          cd taotao-diary-app
+          npm init -y
+          
+      - name: Install Capacitor
+        run: |
+          cd taotao-diary-app
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+
+      - name: Copy source files
+        run: |
+          cd taotao-diary-app
+          cp "../新建文件夹/diary_system.html" ./
+          cp "../新建文件夹/manifest.json" ./
+          cp "../新建文件夹/service-worker.js" ./
+          cp "../新建文件夹/icom.page.jpg" ./
+          
+      - name: Create index.html entry
+        run: |
+          cd taotao-diary-app
+          echo '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=diary_system.html"></head></html>' > index.html
+
+      - name: Initialize Capacitor
+        run: |
+          cd taotao-diary-app
+          npx cap init "桃桃日记" "com.taotao.diary" --web-dir=.
+
+      - name: Add Android platform
+        run: |
+          cd taotao-diary-app
+          npx cap add android
+
+      - name: Sync Capacitor
+        run: |
+          cd taotao-diary-app
+          npx cap sync android
+
+      - name: Build APK
+        run: |
+          cd taotao-diary-app/android
+          chmod +x ./gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: taotao-diary-apk
+          path: taotao-diary-app/android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
